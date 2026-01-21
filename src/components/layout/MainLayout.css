@@ -10,8 +10,10 @@
 .main-layout {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  min-height: 100dvh; /* Dynamic viewport height for mobile browsers */
+  /* iOS viewport fix: use height instead of min-height to prevent expansion */
+  height: 100%;
+  max-height: 100vh;
+  max-height: 100dvh; /* Dynamic viewport height for mobile browsers */
   width: 100%;
   background-color: var(--color-bg-primary, #ffffff);
   overflow: hidden;

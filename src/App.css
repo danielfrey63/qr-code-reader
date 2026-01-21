@@ -1,7 +1,11 @@
 .app {
-  min-height: 100vh;
+  /* iOS viewport fix: use height instead of min-height */
+  height: 100%;
+  max-height: 100vh;
+  max-height: 100dvh; /* Dynamic viewport height for mobile browsers */
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .app-header {
