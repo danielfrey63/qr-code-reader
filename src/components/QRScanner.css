@@ -3,7 +3,7 @@
   flex-direction: column;
   align-items: center;
   width: 100%;
-  max-width: 500px;
+  max-width: 100%;
   margin: 0 auto;
   padding: 1rem;
 }
@@ -62,7 +62,7 @@
   position: relative;
   width: 100%;
   aspect-ratio: 1;
-  max-width: 400px;
+  max-width: 100%;
   border-radius: 16px;
   overflow: hidden;
   background-color: #000;

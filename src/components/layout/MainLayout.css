@@ -42,10 +42,11 @@
 
 /**
  * Viewfinder container - maximizes camera view while maintaining aspect ratio
+ * Uses percentage-based width with reasonable max-width for very large screens
  */
 .main-layout__viewfinder-container {
   width: 100%;
-  max-width: 600px;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -116,14 +117,14 @@
    Responsive Adjustments
    ========================================================================== */
 
-/* Large screens - provide more padding and max-width */
+/* Large screens - provide more padding */
 @media (min-width: 768px) {
   .main-layout__content {
     padding: 1rem;
   }
 
   .main-layout__viewfinder-container {
-    max-width: 500px;
+    max-width: 100%;
   }
 
   .main-layout__footer {
