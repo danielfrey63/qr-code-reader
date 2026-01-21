@@ -343,7 +343,7 @@
   background-color: var(--color-neutral-900, #212121);
 }
 
-.camera-preview--streaming {
+.camera-preview--active {
   /* Video is visible, no special background needed */
 }
 

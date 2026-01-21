@@ -155,7 +155,7 @@ export function QRScanner({
       <div className="qr-scanner__status-bar">
         <span className={`qr-scanner__status-indicator qr-scanner__status-indicator--${status}`}>
           {status === 'initializing' && 'Initializing camera...'}
-          {status === 'scanning' && 'Scanning for QR codes...'}
+          {status === 'active' && 'Scanning for QR codes...'}
           {status === 'paused' && 'Scanner paused'}
           {status === 'stopped' && 'Scanner stopped'}
           {status === 'error' && 'Scanner error'}

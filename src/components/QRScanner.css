@@ -28,12 +28,12 @@
   color: #616161;
 }
 
-.qr-scanner__status-indicator--scanning {
+.qr-scanner__status-indicator--active {
   background-color: #e8f5e9;
   color: #2e7d32;
 }
 
-.qr-scanner__status-indicator--scanning::before {
+.qr-scanner__status-indicator--active::before {
   content: '';
   width: 8px;
   height: 8px;
@@ -364,7 +364,7 @@
     color: #e0e0e0;
   }
 
-  .qr-scanner__status-indicator--scanning {
+  .qr-scanner__status-indicator--active {
     background-color: rgba(76, 175, 80, 0.2);
     color: #81c784;
   }

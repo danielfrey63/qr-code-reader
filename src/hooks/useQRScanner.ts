@@ -129,7 +129,7 @@ export function useQRScanner(
    * Start the QR scanner
    */
   const startScanner = useCallback(async (): Promise<boolean> => {
-    if (status === 'scanning' || status === 'initializing') {
+    if (status === 'active' || status === 'initializing') {
       return false;
     }
 
@@ -176,7 +176,7 @@ export function useQRScanner(
       );
 
       if (isMountedRef.current) {
-        setStatus('scanning');
+        setStatus('active');
         isPausedRef.current = false;
       }
 
@@ -234,7 +234,7 @@ export function useQRScanner(
    * Pause scanning (keeps camera running)
    */
   const pauseScanner = useCallback(() => {
-    if (status === 'scanning') {
+    if (status === 'active') {
       isPausedRef.current = true;
       setStatus('paused');
     }
@@ -246,7 +246,7 @@ export function useQRScanner(
   const resumeScanner = useCallback(() => {
     if (status === 'paused') {
       isPausedRef.current = false;
-      setStatus('scanning');
+      setStatus('active');
     }
   }, [status]);
 
@@ -317,7 +317,7 @@ export function useQRScanner(
         );
 
         if (isMountedRef.current) {
-          setStatus('scanning');
+          setStatus('active');
           isPausedRef.current = false;
         }
 
@@ -355,7 +355,7 @@ export function useQRScanner(
     };
   }, []);
 
-  const isScanning = status === 'scanning';
+  const isScanning = status === 'active';
 
   return {
     status,

@@ -2,6 +2,8 @@
  * QR scanner types and interfaces
  */
 
+import type { ScannerWorkflowStatus } from './workflow';
+
 /**
  * Result of a successful QR code scan
  */
@@ -36,14 +38,15 @@ export interface QRScannerError {
 
 /**
  * QR scanner status
+ * Uses the standardized ScannerWorkflowStatus from workflow.ts for consistency.
+ * - 'idle': Scanner is not active, ready to start
+ * - 'initializing': Scanner is starting up
+ * - 'active': Scanner is actively scanning for QR codes (previously 'scanning')
+ * - 'paused': Scanner is paused (camera still running, but not processing)
+ * - 'stopped': Scanner has been explicitly stopped
+ * - 'error': An error occurred with the scanner
  */
-export type QRScannerStatus =
-  | 'idle'
-  | 'initializing'
-  | 'scanning'
-  | 'paused'
-  | 'stopped'
-  | 'error';
+export type QRScannerStatus = ScannerWorkflowStatus;
 
 /**
  * QR scanner configuration

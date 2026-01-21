@@ -1,11 +1,17 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import type { CameraConfig } from '../types/camera';
+import type { CameraWorkflowStatus } from '../types/workflow';
 import './CameraPreview.css';
 
 /**
  * Camera preview status types
+ * Uses the standardized CameraWorkflowStatus from workflow.ts for consistency.
+ * - 'idle': Camera is not active
+ * - 'initializing': Camera is starting up
+ * - 'active': Camera is streaming video
+ * - 'error': An error occurred
  */
-export type CameraPreviewStatus = 'idle' | 'initializing' | 'streaming' | 'error';
+export type CameraPreviewStatus = CameraWorkflowStatus;
 
 /**
  * Aspect ratio preset options
@@ -150,7 +156,7 @@ export function CameraPreview({
         }
       }
 
-      updateStatus('streaming');
+      updateStatus('active');
       onStreamReady?.(stream);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to access camera';
@@ -188,10 +194,10 @@ export function CameraPreview({
   }, [active, startStream, stopStream, updateStatus]);
 
   /**
-   * Handle config changes while streaming
+   * Handle config changes while active
    */
   useEffect(() => {
-    if (active && status === 'streaming') {
+    if (active && status === 'active') {
       // Restart stream with new config
       stopStream();
       startStream();
@@ -231,7 +237,7 @@ export function CameraPreview({
       />
 
       {/* Scanning indicator overlay */}
-      {showScanningIndicator && status === 'streaming' && (
+      {showScanningIndicator && status === 'active' && (
         <div className="camera-preview__overlay" data-testid="camera-preview-overlay">
           {/* Corner markers */}
           <div className="camera-preview__scan-region">
@@ -267,8 +273,8 @@ export function CameraPreview({
         </div>
       )}
 
-      {/* Status indicator when streaming */}
-      {status === 'streaming' && scanning && (
+      {/* Status indicator when active */}
+      {status === 'active' && scanning && (
         <div className="camera-preview__status-badge" data-testid="camera-preview-status">
           <span className="camera-preview__status-dot" />
           <span className="camera-preview__status-text">Scanning</span>
