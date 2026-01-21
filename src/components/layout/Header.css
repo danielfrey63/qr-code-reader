@@ -42,6 +42,18 @@
   min-width: 0; /* Allow text truncation */
 }
 
+.header__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.header__icon {
+  color: var(--color-primary, #3b82f6);
+  flex-shrink: 0;
+}
+
 .header__title {
   margin: 0;
   font-size: 1.125rem;
@@ -104,6 +116,10 @@
   color: var(--color-neutral-400, #bdbdbd);
 }
 
+.dark .header__icon {
+  color: var(--color-primary-light, #60a5fa);
+}
+
 /* System preference fallback (when no theme class is set) */
 @media (prefers-color-scheme: dark) {
   :root:not(.light):not(.dark) .header {
@@ -117,6 +133,10 @@
 
   :root:not(.light):not(.dark) .header__subtitle {
     color: var(--color-neutral-400, #bdbdbd);
+  }
+
+  :root:not(.light):not(.dark) .header__icon {
+    color: var(--color-primary-light, #60a5fa);
   }
 }
 
@@ -206,6 +226,11 @@
 .header--transparent .header__subtitle {
   color: rgba(255, 255, 255, 0.8);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.header--transparent .header__icon {
+  color: white;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
 }
 
 /* Minimal header - just the title, no border */

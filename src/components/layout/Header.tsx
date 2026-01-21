@@ -1,3 +1,5 @@
+import { QRCodeIcon } from '../icons/QRCodeIcon';
+import '../icons/QRCodeIcon.css';
 import './Header.css';
 
 interface HeaderProps {
@@ -34,7 +36,10 @@ export function Header({
 
         {/* Title and branding */}
         <div className="header__branding">
-          <h1 className="header__title">{title}</h1>
+          <div className="header__title-row">
+            <QRCodeIcon className="header__icon" size="small" data-testid="header-icon" />
+            <h1 className="header__title">{title}</h1>
+          </div>
           {subtitle && (
             <p className="header__subtitle">{subtitle}</p>
           )}

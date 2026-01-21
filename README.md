@@ -185,6 +185,31 @@ The app requests camera permission on first use. Once granted, it starts the QR 
 3. When a QR code is detected, scanning stops automatically
 4. The result is displayed in an overlay with options to copy or scan again
 
+### Scanner Status-Transition
+
+```mermaid
+stateDiagram-v2
+  [*] --> idle
+  idle --> initializing: startScanner()
+  idle --> initializing: switchCamera()
+
+  initializing --> active: startScanner() success
+  initializing --> error: startScanner() failure
+
+  active --> paused: handleDecode() | pauseScanner()
+  active --> stopped: stopScanner()
+  active --> initializing: switchCamera()
+
+  paused --> active: resumeScanner()
+  paused --> initializing: switchCamera()
+
+  stopped --> initializing: startScanner()
+  stopped --> initializing: switchCamera()
+
+  error --> initializing: startScanner()
+  error --> initializing: switchCamera()
+```
+
 ### Scan History
 
 - Scanned QR codes are automatically saved to local storage
