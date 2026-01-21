@@ -86,8 +86,6 @@ export function useQRScanner(
   const scannerRef = useRef<Html5Qrcode | null>(null);
   // Track if component is mounted
   const isMountedRef = useRef(true);
-  // Track current camera configuration for switching
-  const currentCameraConfigRef = useRef<{ deviceId?: string; facingMode?: 'user' | 'environment' }>({});
 
   // Merge config with defaults
   const mergedConfig = useMemo(() => ({ ...DEFAULT_SCANNER_CONFIG, ...config }), [config]);
@@ -242,9 +240,6 @@ export function useQRScanner(
    */
   const switchCamera = useCallback(
     async (options: { deviceId?: string; facingMode?: 'user' | 'environment' }): Promise<boolean> => {
-      // Update the current camera config ref
-      currentCameraConfigRef.current = options;
-
       // If scanner is running, stop it first
       if (scannerRef.current?.isScanning) {
         try {

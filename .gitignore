@@ -28,6 +28,7 @@ dist-ssr
 
 # Automaker and temp
 .automaker/
+.worktrees/
 temp/
 
 # Coverage reports
