@@ -20,6 +20,10 @@ interface QRScannerProps {
   facingMode?: 'user' | 'environment';
   /** Callback when camera switch is requested */
   onSwitchCamera?: () => void;
+  /** Whether to resume scanning (set to true to resume after pause) */
+  shouldResume?: boolean;
+  /** Callback when resume is complete */
+  onResumeComplete?: () => void;
 }
 
 const SCANNER_ELEMENT_ID = 'qr-reader';
@@ -36,6 +40,8 @@ export function QRScanner({
   hasMultipleCameras = false,
   facingMode = 'environment',
   onSwitchCamera,
+  shouldResume = false,
+  onResumeComplete,
 }: QRScannerProps) {
   const hasStartedRef = useRef(false);
   const previousConfigRef = useRef<QRScannerConfig | undefined>(undefined);
@@ -51,6 +57,8 @@ export function QRScanner({
     startScanner,
     stopScanner,
     switchCamera,
+    resumeScanner,
+    clearResult,
   } = useQRScanner(SCANNER_ELEMENT_ID, config, onScan);
 
   // Convert scanner errors to app errors with recovery actions
@@ -113,6 +121,15 @@ export function QRScanner({
       onScan(lastResult);
     }
   }, [lastResult, onScan]);
+
+  // Handle shouldResume prop to resume scanning after pause
+  useEffect(() => {
+    if (shouldResume && status === 'paused') {
+      clearResult();
+      resumeScanner();
+      onResumeComplete?.();
+    }
+  }, [shouldResume, status, resumeScanner, clearResult, onResumeComplete]);
 
   // Handle recovery action from error overlay
   const handleRecoveryAction = useCallback((action: RecoveryAction) => {

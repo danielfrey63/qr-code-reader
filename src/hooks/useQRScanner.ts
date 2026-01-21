@@ -100,6 +100,7 @@ export function useQRScanner(
 
   /**
    * Handle successful QR code decode
+   * Auto-pauses the scanner after a successful scan to prevent multiple scans
    */
   const handleDecode = useCallback(
     (decodedText: string, decodedResult: { result: { format?: { formatName: string } } }) => {
@@ -111,8 +112,12 @@ export function useQRScanner(
         timestamp: Date.now(),
       };
 
+      // Auto-pause scanner after successful scan to prevent multiple detections
+      isPausedRef.current = true;
+
       if (isMountedRef.current) {
         setLastResult(result);
+        setStatus('paused');
       }
 
       onScan?.(result);

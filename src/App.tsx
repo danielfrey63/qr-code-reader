@@ -38,6 +38,8 @@ function App() {
   const [showResultOverlay, setShowResultOverlay] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  // Track whether to resume scanning after a pause
+  const [shouldResume, setShouldResume] = useState(false);
 
   const handleRequestPermission = async () => {
     // Request with back camera preferred for QR scanning
@@ -60,6 +62,13 @@ function App() {
   const handleNewScan = useCallback(() => {
     setShowResultOverlay(false);
     setScanResult(null);
+    // Signal the scanner to resume scanning
+    setShouldResume(true);
+  }, []);
+
+  // Handle resume complete callback from scanner
+  const handleResumeComplete = useCallback(() => {
+    setShouldResume(false);
   }, []);
 
   // Handle overlay dismiss
@@ -147,6 +156,8 @@ function App() {
             hasMultipleCameras={hasMultipleCameras}
             facingMode={facingMode}
             onSwitchCamera={handleSwitchCamera}
+            shouldResume={shouldResume}
+            onResumeComplete={handleResumeComplete}
           />
 
           {/* Scan result overlay - appears after successful scan */}
