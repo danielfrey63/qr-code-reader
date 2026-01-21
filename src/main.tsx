@@ -4,6 +4,7 @@ import './index.css'
 import App from './App.tsx'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { ToastProvider } from './contexts/ToastContext'
+import { ScanHistoryProvider } from './contexts/ScanHistoryContext'
 import { ToastContainer } from './components/ToastContainer'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { registerServiceWorker } from './services/serviceWorkerRegistration'
@@ -39,8 +40,10 @@ createRoot(document.getElementById('root')!).render(
     >
       <ThemeProvider>
         <ToastProvider>
-          <App />
-          <ToastContainer />
+          <ScanHistoryProvider>
+            <App />
+            <ToastContainer />
+          </ScanHistoryProvider>
         </ToastProvider>
       </ThemeProvider>
     </ErrorBoundary>
