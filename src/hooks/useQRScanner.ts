@@ -112,12 +112,13 @@ export function useQRScanner(
         timestamp: Date.now(),
       };
 
-      // Auto-pause scanner after successful scan to prevent multiple detections
+      // Stop scanner after successful scan (transition to idle, not paused)
+      // This ensures "Start Scanning" and "New Scan" are the same action
       isPausedRef.current = true;
 
       if (isMountedRef.current) {
         setLastResult(result);
-        setStatus('paused');
+        setStatus('idle');
       }
 
       onScan?.(result);

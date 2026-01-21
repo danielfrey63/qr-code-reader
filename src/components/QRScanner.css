@@ -8,55 +8,6 @@
   padding: 1rem;
 }
 
-/* Status bar */
-.qr-scanner__status-bar {
-  width: 100%;
-  padding: 0.5rem 1rem;
-  margin-bottom: 1rem;
-  text-align: center;
-}
-
-.qr-scanner__status-indicator {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  background-color: #f5f5f5;
-  color: #616161;
-}
-
-.qr-scanner__status-indicator--active {
-  background-color: #e8f5e9;
-  color: #2e7d32;
-}
-
-.qr-scanner__status-indicator--active::before {
-  content: '';
-  width: 8px;
-  height: 8px;
-  background-color: #4caf50;
-  border-radius: 50%;
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-.qr-scanner__status-indicator--initializing {
-  background-color: #e3f2fd;
-  color: #1976d2;
-}
-
-.qr-scanner__status-indicator--error {
-  background-color: #ffebee;
-  color: #c62828;
-}
-
-.qr-scanner__status-indicator--paused {
-  background-color: #fff3e0;
-  color: #e65100;
-}
-
 /* Viewport */
 .qr-scanner__viewport {
   position: relative;
@@ -359,31 +310,6 @@
 
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
-  .qr-scanner__status-indicator {
-    background-color: #424242;
-    color: #e0e0e0;
-  }
-
-  .qr-scanner__status-indicator--active {
-    background-color: rgba(76, 175, 80, 0.2);
-    color: #81c784;
-  }
-
-  .qr-scanner__status-indicator--initializing {
-    background-color: rgba(25, 118, 210, 0.2);
-    color: #64b5f6;
-  }
-
-  .qr-scanner__status-indicator--error {
-    background-color: rgba(244, 67, 54, 0.2);
-    color: #ef9a9a;
-  }
-
-  .qr-scanner__status-indicator--paused {
-    background-color: rgba(255, 152, 0, 0.2);
-    color: #ffb74d;
-  }
-
   .qr-scanner__result {
     background-color: rgba(76, 175, 80, 0.1);
     border-color: #388e3c;
