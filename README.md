@@ -79,6 +79,42 @@ npm run preview
 | `npm run lint` | Run ESLint |
 | `npm run generate-icons` | Generate PWA icons |
 
+## Testing
+
+The project includes comprehensive testing infrastructure with both unit tests (Vitest) and end-to-end tests (Playwright).
+
+### Running Unit Tests
+
+| Command | Description |
+|---------|-------------|
+| `npm test` | Run unit tests in watch mode |
+| `npm run test:run` | Run unit tests once |
+| `npm run test:ui` | Run tests with Vitest UI interface |
+
+### Code Coverage
+
+| Command | Description |
+|---------|-------------|
+| `npm run test:coverage` | Generate code coverage report |
+| `npm run test:coverage:watch` | Generate coverage in watch mode |
+| `npm run coverage` | Generate code coverage report (alias) |
+| `npm run coverage:lcov` | Generate LCOV format coverage report |
+
+Coverage reports are generated in the `./coverage` directory. The HTML report can be opened at `./coverage/index.html`.
+
+### End-to-End Tests
+
+| Command | Description |
+|---------|-------------|
+| `npm run test:e2e` | Run end-to-end tests with Playwright |
+| `npm run test:e2e:ui` | Run e2e tests with Playwright UI |
+
+### Test File Locations
+
+- **Unit tests**: `src/**/*.{test,spec}.{ts,tsx}`
+- **E2E tests**: `**/*.spec.ts` (root level)
+- **Test setup**: `src/test/setup.ts`
+
 ## Project Structure
 
 ```
