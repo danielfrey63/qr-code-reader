@@ -113,6 +113,19 @@ const CAMERA_RECOVERY_ACTIONS: Record<CameraFailureType, RecoveryAction[]> = {
       description: 'Refresh the page to start fresh',
     },
   ],
+  INSECURE_CONTEXT: [
+    {
+      type: 'CONTACT_SUPPORT',
+      label: 'Contact Support',
+      description: 'Request help to resolve the HTTPS configuration issue',
+      isPrimary: true,
+    },
+    {
+      type: 'NONE',
+      label: 'Use HTTPS',
+      description: 'Access this site using a secure HTTPS connection',
+    },
+  ],
 };
 
 /**
@@ -230,6 +243,7 @@ const CAMERA_USER_MESSAGES: Record<CameraFailureType, string> = {
   HARDWARE_FAILURE: 'There was a problem accessing your camera. Please try using a different camera or restart your device.',
   STREAM_ERROR: 'The camera stream was interrupted. Please try starting the camera again.',
   INITIALIZATION_FAILED: 'We couldn\'t start the camera. Please make sure your camera is working and try again.',
+  INSECURE_CONTEXT: 'Camera access requires a secure connection (HTTPS). Please access this site using HTTPS or contact the site administrator.',
 };
 
 /**
@@ -326,7 +340,7 @@ export function createScanError(
 export function mapCameraErrorToAppError(error: CameraError): CameraFailureError | PermissionDenialError {
   const typeMapping: Record<CameraErrorType, { category: 'CAMERA' | 'PERMISSION'; type: CameraFailureType | PermissionFailureType }> = {
     'NOT_SUPPORTED': { category: 'CAMERA', type: 'HARDWARE_NOT_FOUND' },
-    'NOT_SECURE_CONTEXT': { category: 'PERMISSION', type: 'DENIED_BY_SYSTEM' },
+    'NOT_SECURE_CONTEXT': { category: 'CAMERA', type: 'INSECURE_CONTEXT' },
     'PERMISSION_DENIED': { category: 'PERMISSION', type: 'DENIED_BY_USER' },
     'PERMISSION_DISMISSED': { category: 'PERMISSION', type: 'DISMISSED' },
     'NO_DEVICES_FOUND': { category: 'CAMERA', type: 'HARDWARE_NOT_FOUND' },
