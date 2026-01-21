@@ -21,7 +21,8 @@ export type CameraFailureType =
   | 'HARDWARE_IN_USE'
   | 'HARDWARE_FAILURE'
   | 'STREAM_ERROR'
-  | 'INITIALIZATION_FAILED';
+  | 'INITIALIZATION_FAILED'
+  | 'INSECURE_CONTEXT';
 
 /**
  * Permission-specific error types
