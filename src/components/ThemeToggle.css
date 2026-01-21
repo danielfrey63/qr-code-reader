@@ -54,3 +54,59 @@
     border-color: var(--color-neutral-500);
   }
 }
+
+/* ==========================================================================
+   Responsive Adjustments
+   ========================================================================== */
+
+/* Small screens - tighter spacing and smaller buttons */
+@media (max-width: 480px) {
+  .theme-toggle {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+
+  .theme-toggle svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 360px) {
+  .theme-toggle {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .theme-toggle svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* Landscape on mobile - even more compact */
+@media (orientation: landscape) and (max-height: 500px) {
+  .theme-toggle {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .theme-toggle svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* Large screens - slightly larger touch targets */
+@media (min-width: 768px) {
+  .theme-toggle {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .theme-toggle svg {
+    width: 22px;
+    height: 22px;
+  }
+}

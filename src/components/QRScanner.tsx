@@ -115,12 +115,8 @@ export function QRScanner({
     }
   }, [error, onError]);
 
-  // Notify parent of scan results
-  useEffect(() => {
-    if (lastResult && onScan) {
-      onScan(lastResult);
-    }
-  }, [lastResult, onScan]);
+  // Note: onScan callback is already called directly in useQRScanner's handleDecode function
+  // Removed duplicate useEffect that was calling onScan(lastResult) here, which caused double-firing
 
   // Handle shouldResume prop to resume scanning after pause
   useEffect(() => {

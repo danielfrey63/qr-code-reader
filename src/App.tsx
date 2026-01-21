@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useCameraPermission } from './hooks/useCameraPermission';
 import { useCameraDevices } from './hooks/useCameraDevices';
 import { useScanHistory } from './hooks/useScanHistory';
@@ -92,6 +92,14 @@ function App() {
   // Determine if camera permission is granted and we can show the scanner
   const showScanner = status?.state === 'granted';
 
+  // Stop the camera permission stream when scanner is shown
+  // QRScanner manages its own camera stream, so we need to stop the permission stream
+  useEffect(() => {
+    if (showScanner && stream) {
+      stopStream();
+    }
+  }, [showScanner, stream, stopStream]);
+
   // Handle settings modal
   const handleOpenSettings = useCallback(() => {
     setShowSettings(true);
@@ -140,8 +148,6 @@ function App() {
         />
       ) : (
         <>
-          {/* Stop the camera permission stream since QRScanner will manage its own */}
-          {stream && stopStream()}
           <QRScanner
             onScan={handleScan}
             onError={handleScannerError}
