@@ -1,0 +1,545 @@
+.qr-scanner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* Status bar */
+.qr-scanner__status-bar {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.qr-scanner__status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  background-color: #f5f5f5;
+  color: #616161;
+}
+
+.qr-scanner__status-indicator--scanning {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.qr-scanner__status-indicator--scanning::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background-color: #4caf50;
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.qr-scanner__status-indicator--initializing {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.qr-scanner__status-indicator--error {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.qr-scanner__status-indicator--paused {
+  background-color: #fff3e0;
+  color: #e65100;
+}
+
+/* Viewport */
+.qr-scanner__viewport {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  max-width: 400px;
+  border-radius: 16px;
+  overflow: hidden;
+  background-color: #000;
+}
+
+.qr-scanner__reader {
+  width: 100%;
+  height: 100%;
+}
+
+/* Override html5-qrcode default styles */
+.qr-scanner__reader video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 16px;
+}
+
+.qr-scanner__reader img {
+  display: none;
+}
+
+/* Scanning overlay */
+.qr-scanner__overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.qr-scanner__scan-region {
+  position: relative;
+  width: 250px;
+  height: 250px;
+}
+
+/* Corner markers */
+.qr-scanner__corner {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border-color: #4caf50;
+  border-style: solid;
+  border-width: 0;
+}
+
+.qr-scanner__corner--tl {
+  top: 0;
+  left: 0;
+  border-top-width: 4px;
+  border-left-width: 4px;
+  border-top-left-radius: 8px;
+}
+
+.qr-scanner__corner--tr {
+  top: 0;
+  right: 0;
+  border-top-width: 4px;
+  border-right-width: 4px;
+  border-top-right-radius: 8px;
+}
+
+.qr-scanner__corner--bl {
+  bottom: 0;
+  left: 0;
+  border-bottom-width: 4px;
+  border-left-width: 4px;
+  border-bottom-left-radius: 8px;
+}
+
+.qr-scanner__corner--br {
+  bottom: 0;
+  right: 0;
+  border-bottom-width: 4px;
+  border-right-width: 4px;
+  border-bottom-right-radius: 8px;
+}
+
+/* Animated scan line */
+.qr-scanner__scan-line {
+  position: absolute;
+  top: 0;
+  left: 10px;
+  right: 10px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #4caf50, transparent);
+  animation: scan 2s linear infinite;
+}
+
+@keyframes scan {
+  0% {
+    top: 10px;
+  }
+  50% {
+    top: calc(100% - 10px);
+  }
+  100% {
+    top: 10px;
+  }
+}
+
+/* Loading overlay */
+.qr-scanner__loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  gap: 1rem;
+}
+
+.qr-scanner__spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #4caf50;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error overlay */
+.qr-scanner__error-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 2rem;
+  text-align: center;
+}
+
+.qr-scanner__error-icon {
+  width: 48px;
+  height: 48px;
+  color: #f44336;
+  margin-bottom: 1rem;
+}
+
+.qr-scanner__error-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.qr-scanner__error-message {
+  color: #ffcdd2;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.qr-scanner__retry-button {
+  padding: 0.75rem 1.5rem;
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.qr-scanner__retry-button:hover {
+  background-color: #d32f2f;
+}
+
+/* Controls */
+.qr-scanner__controls {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.qr-scanner__button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.qr-scanner__button--start {
+  background-color: #4caf50;
+  color: white;
+}
+
+.qr-scanner__button--start:hover {
+  background-color: #43a047;
+}
+
+.qr-scanner__button--stop {
+  background-color: #f44336;
+  color: white;
+}
+
+.qr-scanner__button--stop:hover {
+  background-color: #e53935;
+}
+
+.qr-scanner__button--switch {
+  background-color: #2196f3;
+  color: white;
+}
+
+.qr-scanner__button--switch:hover {
+  background-color: #1976d2;
+}
+
+.qr-scanner__button--switch:active {
+  background-color: #1565c0;
+  transform: scale(0.98);
+}
+
+.qr-scanner__icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Result display */
+.qr-scanner__result {
+  width: 100%;
+  margin-top: 1.5rem;
+  background-color: #e8f5e9;
+  border: 2px solid #4caf50;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.qr-scanner__result-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background-color: #4caf50;
+  color: white;
+  font-weight: 600;
+}
+
+.qr-scanner__result-header svg {
+  width: 20px;
+  height: 20px;
+}
+
+.qr-scanner__result-content {
+  padding: 1rem;
+}
+
+.qr-scanner__result-text {
+  margin: 0 0 0.5rem;
+  word-break: break-all;
+  font-family: monospace;
+  font-size: 0.9375rem;
+  color: #1b5e20;
+  background-color: white;
+  padding: 0.75rem;
+  border-radius: 6px;
+}
+
+.qr-scanner__result-meta {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #2e7d32;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .qr-scanner__status-indicator {
+    background-color: #424242;
+    color: #e0e0e0;
+  }
+
+  .qr-scanner__status-indicator--scanning {
+    background-color: rgba(76, 175, 80, 0.2);
+    color: #81c784;
+  }
+
+  .qr-scanner__status-indicator--initializing {
+    background-color: rgba(25, 118, 210, 0.2);
+    color: #64b5f6;
+  }
+
+  .qr-scanner__status-indicator--error {
+    background-color: rgba(244, 67, 54, 0.2);
+    color: #ef9a9a;
+  }
+
+  .qr-scanner__status-indicator--paused {
+    background-color: rgba(255, 152, 0, 0.2);
+    color: #ffb74d;
+  }
+
+  .qr-scanner__result {
+    background-color: rgba(76, 175, 80, 0.1);
+    border-color: #388e3c;
+  }
+
+  .qr-scanner__result-text {
+    background-color: #2a2a2a;
+    color: #81c784;
+  }
+
+  .qr-scanner__result-meta {
+    color: #a5d6a7;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .qr-scanner {
+    padding: 0.5rem;
+  }
+
+  .qr-scanner__scan-region {
+    width: 200px;
+    height: 200px;
+  }
+
+  .qr-scanner__button {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9375rem;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ==========================================================================
+   Enhanced Error Overlay Styles
+   User-friendly error display with recovery actions
+   ========================================================================== */
+
+.qr-scanner__error-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* Error actions container */
+.qr-scanner__error-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 280px;
+  margin-top: 1rem;
+}
+
+/* Error action buttons */
+.qr-scanner__error-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.qr-scanner__error-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.qr-scanner__error-button--primary {
+  background-color: #f44336;
+  color: white;
+}
+
+.qr-scanner__error-button--primary:hover {
+  background-color: #d32f2f;
+  transform: translateY(-1px);
+}
+
+.qr-scanner__error-button--primary:active {
+  transform: translateY(0);
+}
+
+.qr-scanner__error-button--secondary {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.qr-scanner__error-button--secondary:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Error code display */
+.qr-scanner__error-code {
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Focus styles for accessibility */
+.qr-scanner__error-button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* Animation for error overlay appearance */
+@keyframes errorFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.qr-scanner__error-overlay {
+  animation: errorFadeIn 0.3s ease-out;
+}
+
+/* Responsive adjustments for error overlay */
+@media (max-width: 480px) {
+  .qr-scanner__error-overlay {
+    padding: 1.5rem;
+  }
+
+  .qr-scanner__error-title {
+    font-size: 1.125rem;
+  }
+
+  .qr-scanner__error-message {
+    font-size: 0.875rem;
+  }
+
+  .qr-scanner__error-actions {
+    max-width: 100%;
+  }
+
+  .qr-scanner__error-button {
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+  }
+}

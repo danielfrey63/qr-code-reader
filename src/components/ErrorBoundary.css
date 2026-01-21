@@ -1,0 +1,9 @@
+/* ErrorBoundary wrapper styles */
+.error-boundary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  width: 100%;
+  padding: 1rem;
+}

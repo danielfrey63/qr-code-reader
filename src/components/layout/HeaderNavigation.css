@@ -1,0 +1,205 @@
+/* ==========================================================================
+   Header Navigation Component Styles
+   ========================================================================== */
+
+/**
+ * Container for navigation buttons
+ * Uses flexbox for horizontal alignment with consistent spacing
+ */
+.header-navigation {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ==========================================================================
+   Navigation Button Base Styles
+   ========================================================================== */
+
+.header-navigation__button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 1px solid var(--color-neutral-300);
+  border-radius: 0.5rem;
+  background-color: transparent;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.header-navigation__button:hover {
+  background-color: var(--color-neutral-100);
+  border-color: var(--color-neutral-400);
+}
+
+.header-navigation__button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-primary-500);
+}
+
+.header-navigation__button:active {
+  transform: scale(0.95);
+}
+
+/* Settings button hover effect - rotate icon */
+.header-navigation__button--settings svg {
+  transition: transform 0.3s ease;
+}
+
+.header-navigation__button--settings:hover svg {
+  transform: rotate(30deg);
+}
+
+/* ==========================================================================
+   History Badge
+   ========================================================================== */
+
+.header-navigation__badge {
+  position: absolute;
+  top: -0.375rem;
+  right: -0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.125rem;
+  height: 1.125rem;
+  padding: 0 0.25rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: white;
+  background-color: var(--color-primary-500, #2196f3);
+  border-radius: 9999px;
+  border: 2px solid var(--color-bg-primary, white);
+  animation: header-nav-badge-pop-in 0.2s ease-out;
+}
+
+@keyframes header-nav-badge-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ==========================================================================
+   Dark Mode Styles
+   ========================================================================== */
+
+.dark .header-navigation__button {
+  border-color: var(--color-neutral-600);
+  color: var(--color-text-primary);
+}
+
+.dark .header-navigation__button:hover {
+  background-color: var(--color-neutral-800);
+  border-color: var(--color-neutral-500);
+}
+
+.dark .header-navigation__badge {
+  border-color: var(--color-dark-elevated, #2a2a2a);
+}
+
+/* Media query fallback for system dark mode when .dark class isn't used */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) .header-navigation__button {
+    border-color: var(--color-neutral-600);
+    color: rgba(255, 255, 255, 0.87);
+  }
+
+  :root:not(.light) .header-navigation__button:hover {
+    background-color: var(--color-neutral-800);
+    border-color: var(--color-neutral-500);
+  }
+
+  :root:not(.light) .header-navigation__badge {
+    border-color: #2a2a2a;
+  }
+}
+
+/* ==========================================================================
+   Responsive Adjustments
+   ========================================================================== */
+
+/* Small screens - tighter spacing and smaller buttons */
+@media (max-width: 480px) {
+  .header-navigation {
+    gap: 0.375rem;
+  }
+
+  .header-navigation__button {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+
+  .header-navigation__button svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .header-navigation__badge {
+    min-width: 1rem;
+    height: 1rem;
+    font-size: 0.5625rem;
+    top: -0.25rem;
+    right: -0.25rem;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 360px) {
+  .header-navigation {
+    gap: 0.25rem;
+  }
+
+  .header-navigation__button {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .header-navigation__button svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* Landscape on mobile - even more compact */
+@media (orientation: landscape) and (max-height: 500px) {
+  .header-navigation {
+    gap: 0.25rem;
+  }
+
+  .header-navigation__button {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .header-navigation__button svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* Large screens - slightly larger touch targets */
+@media (min-width: 768px) {
+  .header-navigation {
+    gap: 0.625rem;
+  }
+
+  .header-navigation__button {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .header-navigation__button svg {
+    width: 22px;
+    height: 22px;
+  }
+}

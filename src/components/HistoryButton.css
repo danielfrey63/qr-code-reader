@@ -1,0 +1,95 @@
+/* ==========================================================================
+   History Button Component Styles
+   ========================================================================== */
+
+.history-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 1px solid var(--color-neutral-300);
+  border-radius: 0.5rem;
+  background-color: transparent;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.history-button:hover {
+  background-color: var(--color-neutral-100);
+  border-color: var(--color-neutral-400);
+}
+
+.history-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-primary-500);
+}
+
+/* Badge */
+.history-button__badge {
+  position: absolute;
+  top: -0.375rem;
+  right: -0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.125rem;
+  height: 1.125rem;
+  padding: 0 0.25rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: white;
+  background-color: var(--color-primary-500, #2196f3);
+  border-radius: 9999px;
+  border: 2px solid var(--color-bg-primary, white);
+  animation: badge-pop-in 0.2s ease-out;
+}
+
+@keyframes badge-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ==========================================================================
+   Dark Mode Styles
+   ========================================================================== */
+
+.dark .history-button {
+  border-color: var(--color-neutral-600);
+  color: var(--color-text-primary);
+}
+
+.dark .history-button:hover {
+  background-color: var(--color-neutral-800);
+  border-color: var(--color-neutral-500);
+}
+
+.dark .history-button__badge {
+  border-color: var(--color-dark-elevated, #2a2a2a);
+}
+
+/* Media query fallback for system dark mode when .dark class isn't used */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) .history-button {
+    border-color: var(--color-neutral-600);
+    color: rgba(255, 255, 255, 0.87);
+  }
+
+  :root:not(.light) .history-button:hover {
+    background-color: var(--color-neutral-800);
+    border-color: var(--color-neutral-500);
+  }
+
+  :root:not(.light) .history-button__badge {
+    border-color: #2a2a2a;
+  }
+}

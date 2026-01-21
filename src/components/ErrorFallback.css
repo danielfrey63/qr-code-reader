@@ -1,0 +1,376 @@
+/* ==========================================================================
+   ErrorFallback Component Styles
+   User-friendly error display with recovery actions
+   ========================================================================== */
+
+.error-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+  max-width: 420px;
+  margin: 0 auto;
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+/* Error icon container */
+.error-fallback__icon {
+  width: 80px;
+  height: 80px;
+  padding: 1.25rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.error-fallback__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Category-specific icon styles */
+.error-fallback--camera .error-fallback__icon,
+.error-fallback--scanner .error-fallback__icon {
+  background-color: #ffebee;
+  color: #d32f2f;
+}
+
+.error-fallback--permission .error-fallback__icon {
+  background-color: #fff3e0;
+  color: #e65100;
+}
+
+.error-fallback--unknown .error-fallback__icon {
+  background-color: #ffebee;
+  color: #d32f2f;
+}
+
+/* Title styles */
+.error-fallback__title {
+  margin: 0 0 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+/* Message styles */
+.error-fallback__message {
+  margin: 0 0 1.5rem;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #4a4a4a;
+}
+
+/* Actions container */
+.error-fallback__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 280px;
+}
+
+/* Button styles */
+.error-fallback__button {
+  padding: 0.875rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.error-fallback__button:focus-visible {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+}
+
+.error-fallback__button--primary {
+  background-color: #1976d2;
+  color: white;
+}
+
+.error-fallback__button--primary:hover {
+  background-color: #1565c0;
+}
+
+.error-fallback__button--secondary {
+  background-color: #f5f5f5;
+  color: #424242;
+}
+
+.error-fallback__button--secondary:hover {
+  background-color: #eeeeee;
+}
+
+/* Technical details (collapsible) */
+.error-fallback__details {
+  margin-top: 1.5rem;
+  width: 100%;
+  text-align: left;
+}
+
+.error-fallback__details-summary {
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #757575;
+  padding: 0.5rem 0;
+  user-select: none;
+}
+
+.error-fallback__details-summary:hover {
+  color: #1976d2;
+}
+
+.error-fallback__details-content {
+  margin-top: 0.75rem;
+  padding: 1rem;
+  background-color: #fafafa;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  color: #616161;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  word-break: break-word;
+}
+
+.error-fallback__details-content p {
+  margin: 0.25rem 0;
+}
+
+/* ==========================================================================
+   InlineErrorDisplay Component Styles
+   Compact error display for inline use
+   ========================================================================== */
+
+.inline-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  background-color: #ffebee;
+  border-radius: 8px;
+  border-left: 4px solid #d32f2f;
+  margin: 1rem 0;
+}
+
+.inline-error__content {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.inline-error__icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  color: #d32f2f;
+}
+
+.inline-error__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.inline-error__message {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #b71c1c;
+}
+
+.inline-error__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.inline-error__button {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.inline-error__button--retry {
+  background-color: #d32f2f;
+  color: white;
+}
+
+.inline-error__button--retry:hover {
+  background-color: #c62828;
+}
+
+.inline-error__button--dismiss {
+  background-color: transparent;
+  color: #b71c1c;
+  padding: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inline-error__button--dismiss:hover {
+  background-color: rgba(183, 28, 28, 0.1);
+}
+
+.inline-error__button--dismiss svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ==========================================================================
+   Dark Mode Support
+   ========================================================================== */
+
+@media (prefers-color-scheme: dark) {
+  .error-fallback {
+    background-color: #2a2a2a;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  }
+
+  .error-fallback__title {
+    color: #f5f5f5;
+  }
+
+  .error-fallback__message {
+    color: #b0b0b0;
+  }
+
+  .error-fallback--camera .error-fallback__icon,
+  .error-fallback--scanner .error-fallback__icon,
+  .error-fallback--unknown .error-fallback__icon {
+    background-color: rgba(211, 47, 47, 0.2);
+  }
+
+  .error-fallback--permission .error-fallback__icon {
+    background-color: rgba(230, 81, 0, 0.2);
+  }
+
+  .error-fallback__button--secondary {
+    background-color: #3a3a3a;
+    color: #e0e0e0;
+  }
+
+  .error-fallback__button--secondary:hover {
+    background-color: #4a4a4a;
+  }
+
+  .error-fallback__details-summary {
+    color: #9e9e9e;
+  }
+
+  .error-fallback__details-content {
+    background-color: #1a1a1a;
+    color: #9e9e9e;
+  }
+
+  /* Inline error dark mode */
+  .inline-error {
+    background-color: rgba(211, 47, 47, 0.15);
+    border-left-color: #ef5350;
+  }
+
+  .inline-error__icon {
+    color: #ef5350;
+  }
+
+  .inline-error__message {
+    color: #ffcdd2;
+  }
+
+  .inline-error__button--dismiss {
+    color: #ef5350;
+  }
+
+  .inline-error__button--dismiss:hover {
+    background-color: rgba(239, 83, 80, 0.15);
+  }
+}
+
+/* ==========================================================================
+   Animations
+   ========================================================================== */
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-4px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(4px);
+  }
+}
+
+.error-fallback__icon--shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.inline-error {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* ==========================================================================
+   Responsive Adjustments
+   ========================================================================== */
+
+@media (max-width: 480px) {
+  .error-fallback {
+    padding: 1.5rem;
+    margin: 0.5rem;
+  }
+
+  .error-fallback__icon {
+    width: 64px;
+    height: 64px;
+    padding: 1rem;
+  }
+
+  .error-fallback__title {
+    font-size: 1.25rem;
+  }
+
+  .error-fallback__message {
+    font-size: 0.9375rem;
+  }
+
+  .error-fallback__actions {
+    max-width: 100%;
+  }
+
+  .inline-error {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .inline-error__actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

@@ -1,0 +1,539 @@
+/* ==========================================================================
+   CameraPreview - Live Video Stream Component
+   ========================================================================== */
+
+/**
+ * Main container for the camera preview
+ * Uses aspect-ratio for consistent sizing across devices
+ */
+.camera-preview {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  background-color: #000;
+  border-radius: 16px;
+  /* Default aspect ratio, overridden by inline style */
+  aspect-ratio: 4 / 3;
+}
+
+/* ==========================================================================
+   Aspect Ratio Variants
+   ========================================================================== */
+
+.camera-preview--ratio-1-1 {
+  aspect-ratio: 1 / 1;
+}
+
+.camera-preview--ratio-4-3 {
+  aspect-ratio: 4 / 3;
+}
+
+.camera-preview--ratio-16-9 {
+  aspect-ratio: 16 / 9;
+}
+
+.camera-preview--ratio-auto {
+  /* Auto ratio is set via inline style */
+  aspect-ratio: auto;
+}
+
+/* ==========================================================================
+   Video Element
+   ========================================================================== */
+
+.camera-preview__video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background-color: #000;
+  /* Prevent white flash on load */
+  transform: translateZ(0);
+}
+
+/* Mirror front camera for natural selfie view */
+.camera-preview--user .camera-preview__video {
+  transform: scaleX(-1);
+}
+
+/* ==========================================================================
+   Scanning Overlay
+   ========================================================================== */
+
+.camera-preview__overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.camera-preview__scan-region {
+  position: relative;
+  width: 70%;
+  max-width: 280px;
+  aspect-ratio: 1;
+}
+
+/* Responsive scan region sizing */
+@media (max-width: 480px) {
+  .camera-preview__scan-region {
+    width: 65%;
+    max-width: 200px;
+  }
+}
+
+@media (min-width: 768px) {
+  .camera-preview__scan-region {
+    width: 60%;
+    max-width: 320px;
+  }
+}
+
+/* ==========================================================================
+   Corner Markers
+   ========================================================================== */
+
+.camera-preview__corner {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-color: var(--color-success-500, #4caf50);
+  border-style: solid;
+  border-width: 0;
+  transition: border-color 0.3s ease;
+}
+
+/* Highlight corners when actively scanning */
+.camera-preview--scanning .camera-preview__corner {
+  border-color: var(--color-primary-500, #2196f3);
+}
+
+.camera-preview__corner--tl {
+  top: 0;
+  left: 0;
+  border-top-width: 3px;
+  border-left-width: 3px;
+  border-top-left-radius: 8px;
+}
+
+.camera-preview__corner--tr {
+  top: 0;
+  right: 0;
+  border-top-width: 3px;
+  border-right-width: 3px;
+  border-top-right-radius: 8px;
+}
+
+.camera-preview__corner--bl {
+  bottom: 0;
+  left: 0;
+  border-bottom-width: 3px;
+  border-left-width: 3px;
+  border-bottom-left-radius: 8px;
+}
+
+.camera-preview__corner--br {
+  bottom: 0;
+  right: 0;
+  border-bottom-width: 3px;
+  border-right-width: 3px;
+  border-bottom-right-radius: 8px;
+}
+
+/* Larger corners on bigger screens */
+@media (min-width: 768px) {
+  .camera-preview__corner {
+    width: 32px;
+    height: 32px;
+    border-width: 4px;
+  }
+
+  .camera-preview__corner--tl { border-top-width: 4px; border-left-width: 4px; }
+  .camera-preview__corner--tr { border-top-width: 4px; border-right-width: 4px; }
+  .camera-preview__corner--bl { border-bottom-width: 4px; border-left-width: 4px; }
+  .camera-preview__corner--br { border-bottom-width: 4px; border-right-width: 4px; }
+}
+
+/* ==========================================================================
+   Animated Scan Line
+   ========================================================================== */
+
+.camera-preview__scan-line {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--color-primary-400, #42a5f5) 20%,
+    var(--color-primary-500, #2196f3) 50%,
+    var(--color-primary-400, #42a5f5) 80%,
+    transparent 100%
+  );
+  box-shadow: 0 0 8px var(--color-primary-500, #2196f3),
+              0 0 16px rgba(33, 150, 243, 0.5);
+  animation: camera-preview-scan 2s ease-in-out infinite;
+}
+
+@keyframes camera-preview-scan {
+  0%, 100% {
+    top: 8px;
+    opacity: 1;
+  }
+  50% {
+    top: calc(100% - 10px);
+    opacity: 1;
+  }
+}
+
+/* ==========================================================================
+   Loading State
+   ========================================================================== */
+
+.camera-preview__loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background-color: rgba(0, 0, 0, 0.9);
+  color: white;
+  z-index: 20;
+}
+
+.camera-preview__spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--color-primary-500, #2196f3);
+  border-radius: 50%;
+  animation: camera-preview-spin 0.8s linear infinite;
+}
+
+@keyframes camera-preview-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.camera-preview__loading-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ==========================================================================
+   Error State
+   ========================================================================== */
+
+.camera-preview__error {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background-color: rgba(0, 0, 0, 0.95);
+  color: white;
+  z-index: 20;
+  padding: 2rem;
+  text-align: center;
+}
+
+.camera-preview__icon {
+  width: 48px;
+  height: 48px;
+  color: var(--color-error-400, #ef5350);
+}
+
+.camera-preview__error-text {
+  font-size: 1rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ==========================================================================
+   Status Badge
+   ========================================================================== */
+
+.camera-preview__status-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border-radius: 20px;
+  z-index: 15;
+}
+
+.camera-preview__status-dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--color-success-500, #4caf50);
+  border-radius: 50%;
+  animation: camera-preview-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes camera-preview-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.9);
+  }
+}
+
+.camera-preview__status-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ==========================================================================
+   Custom Overlay Content
+   ========================================================================== */
+
+.camera-preview__custom-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 25;
+  pointer-events: none;
+}
+
+.camera-preview__custom-overlay > * {
+  pointer-events: auto;
+}
+
+/* ==========================================================================
+   Status Variants
+   ========================================================================== */
+
+.camera-preview--idle {
+  background-color: var(--color-neutral-900, #212121);
+}
+
+.camera-preview--streaming {
+  /* Video is visible, no special background needed */
+}
+
+/* ==========================================================================
+   Dark Mode Support
+   ========================================================================== */
+
+@media (prefers-color-scheme: dark) {
+  .camera-preview {
+    background-color: #000;
+  }
+
+  .camera-preview__loading {
+    background-color: rgba(0, 0, 0, 0.95);
+  }
+
+  .camera-preview__error {
+    background-color: rgba(0, 0, 0, 0.98);
+  }
+
+  .camera-preview__status-badge {
+    background-color: rgba(0, 0, 0, 0.7);
+  }
+}
+
+/* Class-based dark mode */
+.dark .camera-preview {
+  background-color: #000;
+}
+
+.dark .camera-preview__loading {
+  background-color: rgba(0, 0, 0, 0.95);
+}
+
+.dark .camera-preview__error {
+  background-color: rgba(0, 0, 0, 0.98);
+}
+
+/* ==========================================================================
+   Responsive Adjustments
+   ========================================================================== */
+
+/* Small screens */
+@media (max-width: 480px) {
+  .camera-preview {
+    border-radius: 12px;
+  }
+
+  .camera-preview__status-badge {
+    top: 8px;
+    left: 8px;
+    padding: 4px 10px;
+  }
+
+  .camera-preview__status-dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  .camera-preview__status-text {
+    font-size: 0.6875rem;
+  }
+
+  .camera-preview__loading-text,
+  .camera-preview__error-text {
+    font-size: 0.8125rem;
+  }
+
+  .camera-preview__icon {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* Large screens */
+@media (min-width: 768px) {
+  .camera-preview {
+    border-radius: 20px;
+  }
+
+  .camera-preview__status-badge {
+    top: 16px;
+    left: 16px;
+    padding: 8px 16px;
+  }
+
+  .camera-preview__status-text {
+    font-size: 0.8125rem;
+  }
+
+  .camera-preview__loading-text,
+  .camera-preview__error-text {
+    font-size: 1rem;
+  }
+
+  .camera-preview__icon {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+/* Landscape on mobile devices */
+@media (orientation: landscape) and (max-height: 500px) {
+  .camera-preview {
+    border-radius: 8px;
+  }
+
+  .camera-preview__scan-region {
+    width: 50%;
+    max-width: 180px;
+  }
+
+  .camera-preview__status-badge {
+    top: 6px;
+    left: 6px;
+    padding: 4px 8px;
+  }
+
+  .camera-preview__status-text {
+    font-size: 0.625rem;
+  }
+
+  .camera-preview__loading,
+  .camera-preview__error {
+    gap: 0.5rem;
+    padding: 1rem;
+  }
+
+  .camera-preview__spinner {
+    width: 32px;
+    height: 32px;
+  }
+
+  .camera-preview__icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .camera-preview__loading-text,
+  .camera-preview__error-text {
+    font-size: 0.75rem;
+  }
+}
+
+/* ==========================================================================
+   Safe Area Support (for notched devices)
+   ========================================================================== */
+
+@supports (padding: max(0px)) {
+  .camera-preview__status-badge {
+    top: max(12px, env(safe-area-inset-top));
+    left: max(12px, env(safe-area-inset-left));
+  }
+
+  @media (max-width: 480px) {
+    .camera-preview__status-badge {
+      top: max(8px, env(safe-area-inset-top));
+      left: max(8px, env(safe-area-inset-left));
+    }
+  }
+}
+
+/* ==========================================================================
+   Animation States
+   ========================================================================== */
+
+/* Fade in animation for the component */
+.camera-preview {
+  animation: camera-preview-fade-in 0.3s ease-out;
+}
+
+@keyframes camera-preview-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Pulse animation for active scanning state */
+.camera-preview--scanning .camera-preview__scan-region {
+  animation: camera-preview-region-pulse 3s ease-in-out infinite;
+}
+
+@keyframes camera-preview-region-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(33, 150, 243, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.2);
+  }
+}

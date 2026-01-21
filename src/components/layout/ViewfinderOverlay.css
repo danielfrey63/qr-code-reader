@@ -1,0 +1,279 @@
+/* ==========================================================================
+   ViewfinderOverlay - Camera Overlay System
+   ========================================================================== */
+
+/**
+ * Base overlay styles - positioned over the camera viewfinder
+ * Supports top, center, and bottom positions with various variants
+ */
+.viewfinder-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  pointer-events: none; /* Allow clicks through to camera */
+  z-index: 10;
+  padding: 0.5rem;
+}
+
+/* Enable pointer events only for interactive content */
+.viewfinder-overlay__content {
+  pointer-events: auto;
+}
+
+/* ==========================================================================
+   Position Variants
+   ========================================================================== */
+
+.viewfinder-overlay--top {
+  top: 0;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: max(0.5rem, env(safe-area-inset-top));
+}
+
+.viewfinder-overlay--center {
+  top: 0;
+  bottom: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+.viewfinder-overlay--bottom {
+  bottom: 0;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+/* ==========================================================================
+   Gradient Backgrounds (for text readability)
+   ========================================================================== */
+
+.viewfinder-overlay--gradient {
+  /* No background by default */
+}
+
+.viewfinder-overlay--gradient.viewfinder-overlay--top {
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.6) 0%,
+    rgba(0, 0, 0, 0.3) 50%,
+    transparent 100%
+  );
+  padding-bottom: 2rem;
+}
+
+.viewfinder-overlay--gradient.viewfinder-overlay--bottom {
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.6) 0%,
+    rgba(0, 0, 0, 0.3) 50%,
+    transparent 100%
+  );
+  padding-top: 2rem;
+}
+
+.viewfinder-overlay--gradient.viewfinder-overlay--center {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* ==========================================================================
+   Content Container
+   ========================================================================== */
+
+.viewfinder-overlay__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 100%;
+  padding: 0.5rem;
+}
+
+/* ==========================================================================
+   Variant Styles
+   ========================================================================== */
+
+/* Default variant */
+.viewfinder-overlay--default .viewfinder-overlay__content {
+  color: white;
+}
+
+/* Status variant - for status messages at top */
+.viewfinder-overlay--status .viewfinder-overlay__content {
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Controls variant - for buttons/controls at bottom */
+.viewfinder-overlay--controls .viewfinder-overlay__content {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+/* Result variant - for centered results/modals */
+.viewfinder-overlay--result .viewfinder-overlay__content {
+  background-color: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  max-width: calc(100% - 2rem);
+  max-height: calc(100% - 2rem);
+  overflow: auto;
+}
+
+/* ==========================================================================
+   Dark Mode Support
+   ========================================================================== */
+
+@media (prefers-color-scheme: dark) {
+  .viewfinder-overlay--result .viewfinder-overlay__content {
+    background-color: var(--color-dark-elevated, #2a2a2a);
+    color: var(--color-neutral-50, #fafafa);
+  }
+}
+
+/* ==========================================================================
+   Responsive Adjustments
+   ========================================================================== */
+
+/* Large screens */
+@media (min-width: 768px) {
+  .viewfinder-overlay {
+    padding: 1rem;
+  }
+
+  .viewfinder-overlay--status .viewfinder-overlay__content {
+    font-size: 0.9375rem;
+  }
+
+  .viewfinder-overlay--controls .viewfinder-overlay__content {
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .viewfinder-overlay--result .viewfinder-overlay__content {
+    padding: 2rem;
+    max-width: 400px;
+  }
+}
+
+/* Small screens */
+@media (max-width: 480px) {
+  .viewfinder-overlay {
+    padding: 0.25rem;
+  }
+
+  .viewfinder-overlay--gradient.viewfinder-overlay--top {
+    padding-bottom: 1.5rem;
+  }
+
+  .viewfinder-overlay--gradient.viewfinder-overlay--bottom {
+    padding-top: 1.5rem;
+  }
+
+  .viewfinder-overlay--status .viewfinder-overlay__content {
+    font-size: 0.8125rem;
+  }
+
+  .viewfinder-overlay--controls .viewfinder-overlay__content {
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .viewfinder-overlay--result .viewfinder-overlay__content {
+    padding: 1rem;
+    border-radius: 8px;
+  }
+}
+
+/* Landscape on mobile */
+@media (orientation: landscape) and (max-height: 500px) {
+  .viewfinder-overlay--status .viewfinder-overlay__content {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  .viewfinder-overlay--controls .viewfinder-overlay__content {
+    padding: 0.375rem;
+    gap: 0.375rem;
+  }
+
+  .viewfinder-overlay--result .viewfinder-overlay__content {
+    padding: 0.75rem;
+    max-height: calc(100vh - 1rem);
+  }
+}
+
+/* ==========================================================================
+   Animation States
+   ========================================================================== */
+
+/* Fade in animation for overlays */
+.viewfinder-overlay {
+  animation: overlay-fade-in 0.2s ease-out;
+}
+
+@keyframes overlay-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Slide up animation for bottom overlays */
+.viewfinder-overlay--bottom {
+  animation: overlay-slide-up 0.3s ease-out;
+}
+
+@keyframes overlay-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Slide down animation for top overlays */
+.viewfinder-overlay--top {
+  animation: overlay-slide-down 0.3s ease-out;
+}
+
+@keyframes overlay-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scale in animation for center overlays */
+.viewfinder-overlay--center {
+  animation: overlay-scale-in 0.3s ease-out;
+}
+
+@keyframes overlay-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
