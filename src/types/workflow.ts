@@ -34,11 +34,10 @@ export type CameraWorkflowStatus = BaseWorkflowStatus;
  * - 'idle': Scanner is not active, ready to start
  * - 'initializing': Scanner is starting up
  * - 'active': Scanner is actively scanning for QR codes (previously 'scanning')
- * - 'paused': Scanner is paused (camera still running, but not processing)
  * - 'stopped': Scanner has been explicitly stopped
  * - 'error': An error occurred with the scanner
  */
-export type ScannerWorkflowStatus = BaseWorkflowStatus | 'paused' | 'stopped';
+export type ScannerWorkflowStatus = BaseWorkflowStatus | 'stopped';
 
 /**
  * Type guard to check if a status is a valid BaseWorkflowStatus
@@ -51,7 +50,7 @@ export function isBaseWorkflowStatus(status: string): status is BaseWorkflowStat
  * Type guard to check if a status is a valid ScannerWorkflowStatus
  */
 export function isScannerWorkflowStatus(status: string): status is ScannerWorkflowStatus {
-  return ['idle', 'initializing', 'active', 'paused', 'stopped', 'error'].includes(status);
+  return ['idle', 'initializing', 'active', 'stopped', 'error'].includes(status);
 }
 
 /**
@@ -62,7 +61,6 @@ export const WORKFLOW_STATUS_LABELS: Record<ScannerWorkflowStatus, string> = {
   idle: 'Ready',
   initializing: 'Starting...',
   active: 'Active',
-  paused: 'Paused',
   stopped: 'Stopped',
   error: 'Error',
 };

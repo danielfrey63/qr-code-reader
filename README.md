@@ -187,6 +187,8 @@ The app requests camera permission on first use. Once granted, it starts the QR 
 
 ### Scanner Status-Transition
 
+After a successful scan, the scanner transitions to `idle` (not `paused`). This means "Start Scanning" and "New Scan" are exactly the same action: both trigger `idle → initializing → active`.
+
 ```mermaid
 stateDiagram-v2
   [*] --> idle
@@ -196,12 +198,9 @@ stateDiagram-v2
   initializing --> active: startScanner() success
   initializing --> error: startScanner() failure
 
-  active --> paused: handleDecode() | pauseScanner()
+  active --> idle: handleDecode() (successful scan)
   active --> stopped: stopScanner()
   active --> initializing: switchCamera()
-
-  paused --> active: resumeScanner()
-  paused --> initializing: switchCamera()
 
   stopped --> initializing: startScanner()
   stopped --> initializing: switchCamera()

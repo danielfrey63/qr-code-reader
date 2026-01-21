@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { useQRScanner } from '../hooks/useQRScanner';
 import type { QRScanResult, QRScannerConfig } from '../types/scanner';
 import type { ScanError, RecoveryAction } from '../types/errors';
@@ -20,10 +20,14 @@ interface QRScannerProps {
   facingMode?: 'user' | 'environment';
   /** Callback when camera switch is requested */
   onSwitchCamera?: () => void;
-  /** Whether to resume scanning (set to true to resume after pause) */
-  shouldResume?: boolean;
-  /** Callback when resume is complete */
-  onResumeComplete?: () => void;
+}
+
+/** Imperative handle for QRScanner component */
+export interface QRScannerRef {
+  /** Start the scanner */
+  startScanner: () => Promise<boolean>;
+  /** Clear the last scan result */
+  clearResult: () => void;
 }
 
 const SCANNER_ELEMENT_ID = 'qr-reader';
@@ -32,7 +36,7 @@ const SCANNER_ELEMENT_ID = 'qr-reader';
  * QR Scanner component that handles camera stream and QR code detection
  * with comprehensive error handling and recovery options.
  */
-export function QRScanner({
+export const QRScanner = forwardRef<QRScannerRef, QRScannerProps>(function QRScanner({
   onScan,
   onError,
   config,
@@ -40,9 +44,7 @@ export function QRScanner({
   hasMultipleCameras = false,
   facingMode = 'environment',
   onSwitchCamera,
-  shouldResume = false,
-  onResumeComplete,
-}: QRScannerProps) {
+}, ref) {
   const hasStartedRef = useRef(false);
   const previousConfigRef = useRef<QRScannerConfig | undefined>(undefined);
 
@@ -57,9 +59,14 @@ export function QRScanner({
     startScanner,
     stopScanner,
     switchCamera,
-    resumeScanner,
     clearResult,
   } = useQRScanner(SCANNER_ELEMENT_ID, config, onScan);
+
+  // Expose methods via ref for parent components to call
+  useImperativeHandle(ref, () => ({
+    startScanner,
+    clearResult,
+  }), [startScanner, clearResult]);
 
   // Convert scanner errors to app errors with recovery actions
   useEffect(() => {
@@ -118,15 +125,6 @@ export function QRScanner({
   // Note: onScan callback is already called directly in useQRScanner's handleDecode function
   // Removed duplicate useEffect that was calling onScan(lastResult) here, which caused double-firing
 
-  // Handle shouldResume prop to resume scanning after pause
-  useEffect(() => {
-    if (shouldResume && status === 'paused') {
-      clearResult();
-      resumeScanner();
-      onResumeComplete?.();
-    }
-  }, [shouldResume, status, resumeScanner, clearResult, onResumeComplete]);
-
   // Handle recovery action from error overlay
   const handleRecoveryAction = useCallback((action: RecoveryAction) => {
     switch (action.type) {
@@ -151,18 +149,6 @@ export function QRScanner({
 
   return (
     <div className="qr-scanner" data-testid="qr-scanner">
-      {/* Scanner status indicator */}
-      <div className="qr-scanner__status-bar">
-        <span className={`qr-scanner__status-indicator qr-scanner__status-indicator--${status}`}>
-          {status === 'initializing' && 'Initializing camera...'}
-          {status === 'active' && 'Scanning for QR codes...'}
-          {status === 'paused' && 'Scanner paused'}
-          {status === 'stopped' && 'Scanner stopped'}
-          {status === 'error' && 'Scanner error'}
-          {status === 'idle' && 'Ready to scan'}
-        </span>
-      </div>
-
       {/* Scanner viewport */}
       <div className="qr-scanner__viewport">
         <div
@@ -304,7 +290,7 @@ export function QRScanner({
       )}
     </div>
   );
-}
+});
 
 // Icon components
 function ScanIcon() {

@@ -1,9 +1,10 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useCameraPermission } from './hooks/useCameraPermission';
 import { useCameraDevices } from './hooks/useCameraDevices';
 import { useScanHistory } from './hooks/useScanHistory';
 import { CameraPermission } from './components/CameraPermission';
 import { QRScanner } from './components/QRScanner';
+import type { QRScannerRef } from './components/QRScanner';
 import { ScanResultOverlay } from './components/ScanResultOverlay';
 import { SettingsModal } from './components/SettingsModal';
 import { HistoryModal } from './components/HistoryModal';
@@ -38,8 +39,9 @@ function App() {
   const [showResultOverlay, setShowResultOverlay] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  // Track whether to resume scanning after a pause
-  const [shouldResume, setShouldResume] = useState(false);
+
+  // Ref to access QRScanner methods
+  const scannerRef = useRef<QRScannerRef>(null);
 
   const handleRequestPermission = async () => {
     // Request with back camera preferred for QR scanning
@@ -62,13 +64,9 @@ function App() {
   const handleNewScan = useCallback(() => {
     setShowResultOverlay(false);
     setScanResult(null);
-    // Signal the scanner to resume scanning
-    setShouldResume(true);
-  }, []);
-
-  // Handle resume complete callback from scanner
-  const handleResumeComplete = useCallback(() => {
-    setShouldResume(false);
+    // Clear result and start scanner directly (same action as "Start Scanning")
+    scannerRef.current?.clearResult();
+    scannerRef.current?.startScanner();
   }, []);
 
   // Handle overlay dismiss
@@ -149,6 +147,7 @@ function App() {
       ) : (
         <>
           <QRScanner
+            ref={scannerRef}
             onScan={handleScan}
             onError={handleScannerError}
             config={{
@@ -162,8 +161,6 @@ function App() {
             hasMultipleCameras={hasMultipleCameras}
             facingMode={facingMode}
             onSwitchCamera={handleSwitchCamera}
-            shouldResume={shouldResume}
-            onResumeComplete={handleResumeComplete}
           />
 
           {/* Scan result overlay - appears after successful scan */}

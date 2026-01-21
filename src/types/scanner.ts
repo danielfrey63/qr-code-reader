@@ -42,7 +42,6 @@ export interface QRScannerError {
  * - 'idle': Scanner is not active, ready to start
  * - 'initializing': Scanner is starting up
  * - 'active': Scanner is actively scanning for QR codes (previously 'scanning')
- * - 'paused': Scanner is paused (camera still running, but not processing)
  * - 'stopped': Scanner has been explicitly stopped
  * - 'error': An error occurred with the scanner
  */

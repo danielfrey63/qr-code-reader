@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import type {
   QRScanResult,
@@ -30,10 +30,6 @@ export interface UseQRScannerActions {
   startScanner: () => Promise<boolean>;
   /** Stop the QR scanner */
   stopScanner: () => Promise<void>;
-  /** Pause scanning (keeps camera running) */
-  pauseScanner: () => void;
-  /** Resume scanning after pause */
-  resumeScanner: () => void;
   /** Clear the last scan result */
   clearResult: () => void;
   /** Switch to a different camera by device ID or facing mode */
@@ -90,37 +86,42 @@ export function useQRScanner(
   const scannerRef = useRef<Html5Qrcode | null>(null);
   // Track if component is mounted
   const isMountedRef = useRef(true);
-  // Track if scanner is paused
-  const isPausedRef = useRef(false);
   // Track current camera configuration for switching
   const currentCameraConfigRef = useRef<{ deviceId?: string; facingMode?: 'user' | 'environment' }>({});
 
   // Merge config with defaults
-  const mergedConfig = { ...DEFAULT_SCANNER_CONFIG, ...config };
+  const mergedConfig = useMemo(() => ({ ...DEFAULT_SCANNER_CONFIG, ...config }), [config]);
 
   /**
    * Handle successful QR code decode
-   * Auto-pauses the scanner after a successful scan to prevent multiple scans
+   * Stops the scanner after a successful scan to prevent multiple scans
    */
   const handleDecode = useCallback(
     (decodedText: string, decodedResult: { result: { format?: { formatName: string } } }) => {
-      if (isPausedRef.current) return;
-
       const result: QRScanResult = {
         text: decodedText,
         format: decodedResult.result.format?.formatName || 'QR_CODE',
         timestamp: Date.now(),
       };
 
-      // Auto-pause scanner after successful scan to prevent multiple detections
-      isPausedRef.current = true;
+      const stopAndNotify = async () => {
+        if (scannerRef.current?.isScanning) {
+          try {
+            await scannerRef.current.stop();
+          } catch {
+            // Ignore stop errors after a successful scan
+          }
+        }
 
-      if (isMountedRef.current) {
-        setLastResult(result);
-        setStatus('paused');
-      }
+        if (isMountedRef.current) {
+          setLastResult(result);
+          setStatus('idle');
+        }
 
-      onScan?.(result);
+        onScan?.(result);
+      };
+
+      void stopAndNotify();
     },
     [onScan]
   );
@@ -177,7 +178,6 @@ export function useQRScanner(
 
       if (isMountedRef.current) {
         setStatus('active');
-        isPausedRef.current = false;
       }
 
       return true;
@@ -214,7 +214,6 @@ export function useQRScanner(
 
       if (isMountedRef.current) {
         setStatus('stopped');
-        isPausedRef.current = false;
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
@@ -229,26 +228,6 @@ export function useQRScanner(
       }
     }
   }, []);
-
-  /**
-   * Pause scanning (keeps camera running)
-   */
-  const pauseScanner = useCallback(() => {
-    if (status === 'active') {
-      isPausedRef.current = true;
-      setStatus('paused');
-    }
-  }, [status]);
-
-  /**
-   * Resume scanning after pause
-   */
-  const resumeScanner = useCallback(() => {
-    if (status === 'paused') {
-      isPausedRef.current = false;
-      setStatus('active');
-    }
-  }, [status]);
 
   /**
    * Clear the last scan result
@@ -318,7 +297,6 @@ export function useQRScanner(
 
         if (isMountedRef.current) {
           setStatus('active');
-          isPausedRef.current = false;
         }
 
         return true;
@@ -364,8 +342,6 @@ export function useQRScanner(
     isScanning,
     startScanner,
     stopScanner,
-    pauseScanner,
-    resumeScanner,
     clearResult,
     switchCamera,
   };
