@@ -1,12 +1,13 @@
 /**
  * Theme Toggle Component
  *
- * A dropdown button that allows users to switch between light, dark, and system themes.
- * Displays the current effective theme with an appropriate icon.
+ * A simple cycle-through button that allows users to switch between light, dark, and system themes.
+ * Cycles through: light → dark → system → light
+ * Displays the current theme's icon (sun for light, moon for dark, monitor for system).
  */
 
-import { useState, useRef, useEffect } from 'react';
 import { useTheme, type Theme } from '@/contexts/ThemeContext';
+import './ThemeToggle.css';
 
 // ============================================================================
 // Icons
@@ -91,44 +92,51 @@ function MonitorIcon({ className = '' }: { className?: string }) {
   );
 }
 
+// ============================================================================
+// Theme Cycle Order
+// ============================================================================
+
 /**
- * Check icon for selected item
+ * Theme cycle order: light → dark → system → light
  */
-function CheckIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
+const themeCycleOrder: Theme[] = ['light', 'dark', 'system'];
+
+/**
+ * Get the next theme in the cycle
+ */
+function getNextTheme(currentTheme: Theme): Theme {
+  const currentIndex = themeCycleOrder.indexOf(currentTheme);
+  const nextIndex = (currentIndex + 1) % themeCycleOrder.length;
+  return themeCycleOrder[nextIndex];
 }
 
-// ============================================================================
-// Theme Options
-// ============================================================================
-
-interface ThemeOption {
-  value: Theme;
-  label: string;
-  icon: React.ReactNode;
+/**
+ * Get the icon component for a theme
+ */
+function getThemeIcon(theme: Theme): React.ReactNode {
+  switch (theme) {
+    case 'light':
+      return <SunIcon />;
+    case 'dark':
+      return <MoonIcon />;
+    case 'system':
+      return <MonitorIcon />;
+  }
 }
 
-const themeOptions: ThemeOption[] = [
-  { value: 'light', label: 'Light', icon: <SunIcon /> },
-  { value: 'dark', label: 'Dark', icon: <MoonIcon /> },
-  { value: 'system', label: 'System', icon: <MonitorIcon /> },
-];
+/**
+ * Get the label for a theme (for accessibility)
+ */
+function getThemeLabel(theme: Theme): string {
+  switch (theme) {
+    case 'light':
+      return 'Light';
+    case 'dark':
+      return 'Dark';
+    case 'system':
+      return 'System';
+  }
+}
 
 // ============================================================================
 // Component
@@ -142,97 +150,33 @@ export interface ThemeToggleProps {
 /**
  * Theme Toggle Component
  *
- * Renders a button that opens a dropdown menu for theme selection.
- * Shows the current theme's icon and allows switching between light, dark, and system.
+ * Renders a simple button that cycles through theme options on click.
+ * Cycles: light → dark → system → light
+ * Shows the current theme's icon (sun, moon, or monitor).
  */
 export function ThemeToggle({ className = '' }: ThemeToggleProps) {
-  const { theme, effectiveTheme, setTheme } = useTheme();
-  const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  const { theme, setTheme } = useTheme();
 
-  // Get the icon for the current effective theme
-  const currentIcon = effectiveTheme === 'dark' ? <MoonIcon /> : <SunIcon />;
+  // Get the icon for the current theme preference (not effective theme)
+  const currentIcon = getThemeIcon(theme);
+  const currentLabel = getThemeLabel(theme);
+  const nextTheme = getNextTheme(theme);
+  const nextLabel = getThemeLabel(nextTheme);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [isOpen]);
-
-  // Close dropdown on escape key
-  useEffect(() => {
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        setIsOpen(false);
-        buttonRef.current?.focus();
-      }
-    }
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-      return () => document.removeEventListener('keydown', handleEscape);
-    }
-  }, [isOpen]);
-
-  const handleThemeSelect = (selectedTheme: Theme) => {
-    setTheme(selectedTheme);
-    setIsOpen(false);
-    buttonRef.current?.focus();
+  const handleClick = () => {
+    setTheme(nextTheme);
   };
 
   return (
-    <div ref={containerRef} className={`theme-toggle ${className}`}>
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="theme-toggle__button"
-        aria-label={`Current theme: ${effectiveTheme}. Click to change theme.`}
-        aria-expanded={isOpen}
-        aria-haspopup="listbox"
-        data-testid="theme-toggle-button"
-      >
-        {currentIcon}
-      </button>
-
-      {isOpen && (
-        <div
-          className="theme-toggle__dropdown"
-          role="listbox"
-          aria-label="Select theme"
-          data-testid="theme-dropdown"
-        >
-          {themeOptions.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              role="option"
-              aria-selected={theme === option.value}
-              onClick={() => handleThemeSelect(option.value)}
-              className={`theme-toggle__option ${theme === option.value ? 'theme-toggle__option--selected' : ''}`}
-              data-testid={`theme-option-${option.value}`}
-            >
-              <span className="theme-toggle__option-icon">{option.icon}</span>
-              <span className="theme-toggle__option-label">{option.label}</span>
-              {theme === option.value && (
-                <span className="theme-toggle__option-check">
-                  <CheckIcon />
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+    <button
+      type="button"
+      onClick={handleClick}
+      className={`theme-toggle ${className}`}
+      aria-label={`Theme: ${currentLabel}. Click to switch to ${nextLabel}.`}
+      data-testid="theme-toggle-button"
+    >
+      {currentIcon}
+    </button>
   );
 }
 
