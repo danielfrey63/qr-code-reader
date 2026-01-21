@@ -58,6 +58,7 @@ export const QRScanner = forwardRef<QRScannerRef, QRScannerProps>(function QRSca
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
   // Call state for phone number action
   const [callState, setCallState] = useState<'idle' | 'confirming' | 'initiated'>('idle');
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { success, error: toastError } = useToast();
 
   const {
@@ -131,6 +132,15 @@ export const QRScanner = forwardRef<QRScannerRef, QRScannerProps>(function QRSca
     }
   }, [error, onError]);
 
+  // Cleanup copy timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Note: onScan callback is already called directly in useQRScanner's handleDecode function
   // Removed duplicate useEffect that was calling onScan(lastResult) here, which caused double-firing
 
@@ -170,8 +180,13 @@ export const QRScanner = forwardRef<QRScannerRef, QRScannerProps>(function QRSca
       toastError('Failed to copy to clipboard. Please try again.');
     }
 
+    // Clear any existing timeout before setting a new one
+    if (copyTimeoutRef.current) {
+      clearTimeout(copyTimeoutRef.current);
+    }
+
     // Reset state after 2 seconds
-    setTimeout(() => {
+    copyTimeoutRef.current = setTimeout(() => {
       setCopyState('idle');
     }, 2000);
   }, [lastResult, success, toastError]);

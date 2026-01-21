@@ -8,7 +8,7 @@
  * - Accessible announcements for screen readers
  */
 
-import { createContext, useContext, useCallback, useState, type ReactNode } from 'react';
+import { createContext, useContext, useCallback, useState, useRef, useEffect, type ReactNode } from 'react';
 
 // ============================================================================
 // Types
@@ -123,9 +123,27 @@ export function ToastProvider({
   defaultDuration = DEFAULT_DURATION,
 }: ToastProviderProps) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  // Map to store timeout IDs for each toast
+  const timeoutRefs = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
-  // Remove a toast by ID
+  // Cleanup all timeouts on unmount
+  useEffect(() => {
+    return () => {
+      timeoutRefs.current.forEach((timeoutId) => {
+        clearTimeout(timeoutId);
+      });
+      timeoutRefs.current.clear();
+    };
+  }, []);
+
+  // Remove a toast by ID and clear its timeout
   const removeToast = useCallback((id: string) => {
+    // Clear the timeout for this toast if it exists
+    const timeoutId = timeoutRefs.current.get(id);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutRefs.current.delete(id);
+    }
     setToasts((current) => current.filter((toast) => toast.id !== id));
   }, []);
 
@@ -154,9 +172,11 @@ export function ToastProvider({
 
       // Set up auto-dismiss if duration is greater than 0
       if (duration > 0) {
-        setTimeout(() => {
+        const timeoutId = setTimeout(() => {
+          timeoutRefs.current.delete(id);
           removeToast(id);
         }, duration);
+        timeoutRefs.current.set(id, timeoutId);
       }
 
       return id;
@@ -164,8 +184,12 @@ export function ToastProvider({
     [defaultDuration, maxToasts, removeToast]
   );
 
-  // Clear all toasts
+  // Clear all toasts and their timeouts
   const clearAllToasts = useCallback(() => {
+    timeoutRefs.current.forEach((timeoutId) => {
+      clearTimeout(timeoutId);
+    });
+    timeoutRefs.current.clear();
     setToasts([]);
   }, []);
 
