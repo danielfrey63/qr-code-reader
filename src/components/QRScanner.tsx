@@ -3,6 +3,8 @@ import { useQRScanner } from '../hooks/useQRScanner';
 import type { QRScanResult, QRScannerConfig } from '../types/scanner';
 import type { ScanError, RecoveryAction } from '../types/errors';
 import { mapScannerErrorToAppError } from '../utils/errorFactory';
+import { copyToClipboard } from '../utils/clipboard';
+import { useToast } from '../contexts/ToastContext';
 import './QRScanner.css';
 
 interface QRScannerProps {
@@ -50,6 +52,10 @@ export const QRScanner = forwardRef<QRScannerRef, QRScannerProps>(function QRSca
 
   // Enhanced error state with app error format
   const [appError, setAppError] = useState<ScanError | null>(null);
+
+  // Copy state for result display
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
+  const { success, error: toastError } = useToast();
 
   const {
     status,
@@ -146,6 +152,44 @@ export const QRScanner = forwardRef<QRScannerRef, QRScannerProps>(function QRSca
         startScanner();
     }
   }, [startScanner, onSwitchCamera]);
+
+  // Handle copy to clipboard for scan result
+  const handleCopy = useCallback(async () => {
+    if (!lastResult) return;
+
+    const copySuccess = await copyToClipboard(lastResult.text);
+    setCopyState(copySuccess ? 'copied' : 'error');
+
+    // Show toast notification
+    if (copySuccess) {
+      success('Copied to clipboard!');
+    } else {
+      toastError('Failed to copy to clipboard. Please try again.');
+    }
+
+    // Reset state after 2 seconds
+    setTimeout(() => {
+      setCopyState('idle');
+    }, 2000);
+  }, [lastResult, success, toastError]);
+
+  // Format timestamp for display
+  const formatTimestamp = (timestamp: number) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+
+    if (isToday) {
+      return `Today at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    }
+
+    return date.toLocaleDateString([], {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
   return (
     <div className="qr-scanner" data-testid="qr-scanner">
@@ -272,19 +316,35 @@ export const QRScanner = forwardRef<QRScannerRef, QRScannerProps>(function QRSca
         )}
       </div>
 
-      {/* Last scan result display */}
+      {/* Last scan result display - styled like history items */}
       {lastResult && (
         <div className="qr-scanner__result" data-testid="scan-result">
-          <div className="qr-scanner__result-header">
-            <CheckIcon />
-            <span>QR Code Detected!</span>
-          </div>
-          <div className="qr-scanner__result-content">
-            <p className="qr-scanner__result-text">{lastResult.text}</p>
-            <p className="qr-scanner__result-meta">
-              Format: {lastResult.format} |
-              Time: {new Date(lastResult.timestamp).toLocaleTimeString()}
-            </p>
+          <div className="qr-scanner__result-item">
+            <div className="qr-scanner__result-item-content">
+              <div className="qr-scanner__result-item-text" data-testid="scan-result-text">
+                {lastResult.text}
+              </div>
+              <div className="qr-scanner__result-item-meta">
+                <span className="qr-scanner__result-item-time">
+                  {formatTimestamp(lastResult.timestamp)}
+                </span>
+                <span className="qr-scanner__result-item-format">
+                  {lastResult.format}
+                </span>
+              </div>
+            </div>
+            <div className="qr-scanner__result-item-actions">
+              <button
+                className={`qr-scanner__result-item-button qr-scanner__result-item-button--copy ${
+                  copyState === 'copied' ? 'qr-scanner__result-item-button--copied' : ''
+                }`}
+                onClick={handleCopy}
+                aria-label={copyState === 'copied' ? 'Copied!' : 'Copy to clipboard'}
+                data-testid="scan-result-copy"
+              >
+                {copyState === 'copied' ? <CopyCheckIcon /> : <CopyIcon />}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -309,15 +369,6 @@ function StopIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="qr-scanner__icon">
       <rect x="6" y="6" width="12" height="12" rx="2" />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="qr-scanner__icon">
-      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-      <polyline points="22,4 12,14.01 9,11.01" />
     </svg>
   );
 }
@@ -364,6 +415,23 @@ function RefreshIcon() {
       <polyline points="23,4 23,10 17,10" />
       <polyline points="1,20 1,14 7,14" />
       <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+    </svg>
+  );
+}
+
+function CopyIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="qr-scanner__icon" aria-hidden="true">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
+function CopyCheckIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="qr-scanner__icon" aria-hidden="true">
+      <polyline points="20,6 9,17 4,12" />
     </svg>
   );
 }

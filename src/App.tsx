@@ -5,7 +5,6 @@ import { useScanHistory } from './hooks/useScanHistory';
 import { CameraPermission } from './components/CameraPermission';
 import { QRScanner } from './components/QRScanner';
 import type { QRScannerRef } from './components/QRScanner';
-import { ScanResultOverlay } from './components/ScanResultOverlay';
 import { SettingsModal } from './components/SettingsModal';
 import { HistoryModal } from './components/HistoryModal';
 import { MainLayout, HeaderNavigation } from './components/layout';
@@ -34,9 +33,7 @@ function App() {
   // Scan history management
   const { addScan } = useScanHistory();
 
-  // Track the latest scan result and overlay visibility
-  const [scanResult, setScanResult] = useState<QRScanResult | null>(null);
-  const [showResultOverlay, setShowResultOverlay] = useState(false);
+  // Track modal visibility
   const [showSettings, setShowSettings] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
@@ -55,24 +52,8 @@ function App() {
       facingMode: facingMode,
     });
 
-    setScanResult(result);
-    setShowResultOverlay(true);
     console.log('QR Code scanned:', result.text);
   }, [addScan, selectedDevice?.deviceId, facingMode]);
-
-  // Handle new scan request from overlay
-  const handleNewScan = useCallback(() => {
-    setShowResultOverlay(false);
-    setScanResult(null);
-    // Clear result and start scanner directly (same action as "Start Scanning")
-    scannerRef.current?.clearResult();
-    scannerRef.current?.startScanner();
-  }, []);
-
-  // Handle overlay dismiss
-  const handleDismissOverlay = useCallback(() => {
-    setShowResultOverlay(false);
-  }, []);
 
   const handleScannerError = useCallback((errorMessage: string) => {
     console.error('Scanner error:', errorMessage);
@@ -162,16 +143,6 @@ function App() {
             facingMode={facingMode}
             onSwitchCamera={handleSwitchCamera}
           />
-
-          {/* Scan result overlay - appears after successful scan */}
-          {scanResult && (
-            <ScanResultOverlay
-              result={scanResult}
-              visible={showResultOverlay}
-              onNewScan={handleNewScan}
-              onDismiss={handleDismissOverlay}
-            />
-          )}
         </>
       )}
 
