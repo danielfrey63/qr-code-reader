@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Button } from './ui/button';
 import type { QRScanResult } from '../types/scanner';
 import { copyToClipboard } from '../utils/clipboard';
@@ -27,6 +27,7 @@ export function ScanResultOverlay({
   onDismiss,
 }: ScanResultOverlayProps) {
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { success, error } = useToast();
 
   // Handle escape key to dismiss overlay
@@ -43,6 +44,15 @@ export function ScanResultOverlay({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [visible, onDismiss]);
 
+  // Cleanup copy timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const handleCopy = useCallback(async () => {
     const copySuccess = await copyToClipboard(result.text);
     setCopyState(copySuccess ? 'copied' : 'error');
@@ -54,8 +64,13 @@ export function ScanResultOverlay({
       error('Failed to copy to clipboard. Please try again or copy manually.');
     }
 
+    // Clear any existing timeout before setting a new one
+    if (copyTimeoutRef.current) {
+      clearTimeout(copyTimeoutRef.current);
+    }
+
     // Reset state after 2 seconds
-    setTimeout(() => {
+    copyTimeoutRef.current = setTimeout(() => {
       setCopyState('idle');
     }, 2000);
   }, [result.text, success, error]);

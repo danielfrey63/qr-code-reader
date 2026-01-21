@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Button } from './ui/button';
 import { useScanHistory } from '../hooks/useScanHistory';
 import type { ScanHistoryEntry } from '../types/history';
@@ -22,6 +22,7 @@ export function HistoryModal({ visible, onClose }: HistoryModalProps) {
   const { success, error, warning } = useToast();
   const [copyingId, setCopyingId] = useState<string | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Handle escape key to dismiss modal
   useEffect(() => {
@@ -47,6 +48,15 @@ export function HistoryModal({ visible, onClose }: HistoryModalProps) {
     };
   }, [visible, onClose, showClearConfirm]);
 
+  // Cleanup copy timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const handleCopy = useCallback(async (entry: ScanHistoryEntry) => {
     setCopyingId(entry.id);
     const copySuccess = await copyToClipboard(entry.text);
@@ -57,8 +67,13 @@ export function HistoryModal({ visible, onClose }: HistoryModalProps) {
       error('Failed to copy to clipboard. Please try again.');
     }
 
+    // Clear any existing timeout before setting a new one
+    if (copyTimeoutRef.current) {
+      clearTimeout(copyTimeoutRef.current);
+    }
+
     // Reset state after 2 seconds
-    setTimeout(() => {
+    copyTimeoutRef.current = setTimeout(() => {
       setCopyingId(null);
     }, 2000);
   }, [success, error]);
