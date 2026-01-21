@@ -174,6 +174,15 @@ export function useCameraDevices(): UseCameraDevicesReturn {
       if (deviceToSelect) {
         setSelectedDevice(deviceToSelect);
         setFacingModeState(deviceToSelect.facingMode || preference.facingMode);
+      } else if (availableDevices.length === 0) {
+        // No devices available - clear selectedDevice to avoid stale state
+        // This handles cases like camera disconnection or permission revocation
+        setSelectedDevice(null);
+
+        // Reset to default preference
+        const defaultPreference = getDefaultPreference();
+        setFacingModeState(defaultPreference.facingMode);
+        saveCameraPreference(defaultPreference);
       }
     } finally {
       if (isMountedRef.current) {
