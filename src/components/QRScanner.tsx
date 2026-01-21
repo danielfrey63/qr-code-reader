@@ -4,6 +4,7 @@ import type { QRScanResult, QRScannerConfig } from '../types/scanner';
 import type { ScanError, RecoveryAction } from '../types/errors';
 import { mapScannerErrorToAppError } from '../utils/errorFactory';
 import { copyToClipboard } from '../utils/clipboard';
+import { detectPhoneNumber, type UriDetectionResult } from '../utils/uriDetector';
 import { useToast } from '../contexts/ToastContext';
 import './QRScanner.css';
 
@@ -55,6 +56,8 @@ export const QRScanner = forwardRef<QRScannerRef, QRScannerProps>(function QRSca
 
   // Copy state for result display
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
+  // Call state for phone number action
+  const [callState, setCallState] = useState<'idle' | 'confirming' | 'initiated'>('idle');
   const { success, error: toastError } = useToast();
 
   const {
@@ -172,6 +175,39 @@ export const QRScanner = forwardRef<QRScannerRef, QRScannerProps>(function QRSca
       setCopyState('idle');
     }, 2000);
   }, [lastResult, success, toastError]);
+
+  // Detect phone number in result
+  const phoneDetection: UriDetectionResult | null = lastResult
+    ? detectPhoneNumber(lastResult.text)
+    : null;
+
+  // Handle call action for phone numbers
+  const handleCall = useCallback(() => {
+    if (!phoneDetection?.isDetected || !phoneDetection.actionUri) return;
+
+    if (callState === 'idle') {
+      // First click: show confirmation
+      setCallState('confirming');
+      success(`Tap again to call ${phoneDetection.normalizedValue}`);
+
+      // Reset confirmation state after 3 seconds if not confirmed
+      setTimeout(() => {
+        setCallState((current) => (current === 'confirming' ? 'idle' : current));
+      }, 3000);
+    } else if (callState === 'confirming') {
+      // Second click: initiate call
+      setCallState('initiated');
+      success(`Opening dialer for ${phoneDetection.normalizedValue}...`);
+
+      // Open the tel: URI to trigger the dialer
+      window.location.href = phoneDetection.actionUri;
+
+      // Reset state after a delay
+      setTimeout(() => {
+        setCallState('idle');
+      }, 2000);
+    }
+  }, [phoneDetection, callState, success]);
 
   // Format timestamp for display
   const formatTimestamp = (timestamp: number) => {
@@ -344,6 +380,22 @@ export const QRScanner = forwardRef<QRScannerRef, QRScannerProps>(function QRSca
               >
                 {copyState === 'copied' ? <CopyCheckIcon /> : <CopyIcon />}
               </button>
+              {phoneDetection?.isDetected && (
+                <button
+                  className={`qr-scanner__result-item-button qr-scanner__result-item-button--call ${
+                    callState === 'confirming' ? 'qr-scanner__result-item-button--confirming' : ''
+                  } ${callState === 'initiated' ? 'qr-scanner__result-item-button--initiated' : ''}`}
+                  onClick={handleCall}
+                  aria-label={
+                    callState === 'confirming'
+                      ? `Confirm call to ${phoneDetection.normalizedValue}`
+                      : `Call ${phoneDetection.normalizedValue}`
+                  }
+                  data-testid="scan-result-call"
+                >
+                  {callState === 'initiated' ? <PhoneCheckIcon /> : <PhoneIcon />}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -429,6 +481,22 @@ function CopyIcon() {
 }
 
 function CopyCheckIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="qr-scanner__icon" aria-hidden="true">
+      <polyline points="20,6 9,17 4,12" />
+    </svg>
+  );
+}
+
+function PhoneIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="qr-scanner__icon" aria-hidden="true">
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+    </svg>
+  );
+}
+
+function PhoneCheckIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="qr-scanner__icon" aria-hidden="true">
       <polyline points="20,6 9,17 4,12" />
