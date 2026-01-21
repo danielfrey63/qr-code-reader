@@ -39,7 +39,7 @@
   flex-direction: column;
   width: 100%;
   max-width: 400px;
-  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
   background-color: white;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
@@ -138,7 +138,7 @@
 .history-modal__content {
   flex: 1;
   overflow-y: auto;
-  min-height: 200px;
+  min-height: 0;
 }
 
 /* Empty State */
