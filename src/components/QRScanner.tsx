@@ -13,6 +13,8 @@ interface QRScannerProps {
   onScan?: (result: QRScanResult) => void;
   /** Callback when an error occurs */
   onError?: (error: string) => void;
+  /** Callback when user wants to see actions for the last scan result */
+  onShowActions?: (result: QRScanResult) => void;
   /** Scanner configuration */
   config?: QRScannerConfig;
   /** Whether to automatically start scanning */
@@ -42,6 +44,7 @@ const SCANNER_ELEMENT_ID = 'qr-reader';
 export const QRScanner = forwardRef<QRScannerRef, QRScannerProps>(function QRScanner({
   onScan,
   onError,
+  onShowActions,
   config,
   autoStart = true,
   hasMultipleCameras = false,
@@ -192,6 +195,11 @@ export const QRScanner = forwardRef<QRScannerRef, QRScannerProps>(function QRSca
       setCopyState('idle');
     }, 2000);
   }, [lastResult, success, toastError]);
+
+  const handleShowActions = useCallback(() => {
+    if (!lastResult || !onShowActions) return;
+    onShowActions(lastResult);
+  }, [lastResult, onShowActions]);
 
   // Detect phone number in result
   const phoneDetection: UriDetectionResult | null = lastResult
@@ -423,16 +431,16 @@ export const QRScanner = forwardRef<QRScannerRef, QRScannerProps>(function QRSca
               </div>
             </div>
             <div className="qr-scanner__result-item-actions">
-              <button
-                className={`qr-scanner__result-item-button qr-scanner__result-item-button--copy ${
-                  copyState === 'copied' ? 'qr-scanner__result-item-button--copied' : ''
-                }`}
-                onClick={handleCopy}
-                aria-label={copyState === 'copied' ? 'Copied!' : 'Copy to clipboard'}
-                data-testid="scan-result-copy"
-              >
-                {copyState === 'copied' ? <CopyCheckIcon /> : <CopyIcon />}
-              </button>
+              {onShowActions && (
+                <button
+                  className="qr-scanner__result-item-button"
+                  onClick={handleShowActions}
+                  aria-label="Show actions"
+                  data-testid="scan-result-actions"
+                >
+                  <ActionsIcon />
+                </button>
+              )}
               {phoneDetection?.isDetected && (
                 <button
                   className={`qr-scanner__result-item-button qr-scanner__result-item-button--call ${
@@ -465,6 +473,16 @@ export const QRScanner = forwardRef<QRScannerRef, QRScannerProps>(function QRSca
                   {smsState === 'initiated' ? <SmsCheckIcon /> : <SmsIcon />}
                 </button>
               )}
+              <button
+                className={`qr-scanner__result-item-button qr-scanner__result-item-button--copy ${
+                  copyState === 'copied' ? 'qr-scanner__result-item-button--copied' : ''
+                }`}
+                onClick={handleCopy}
+                aria-label={copyState === 'copied' ? 'Copied!' : 'Copy to clipboard'}
+                data-testid="scan-result-copy"
+              >
+                {copyState === 'copied' ? <CopyCheckIcon /> : <CopyIcon />}
+              </button>
             </div>
           </div>
         </div>
@@ -482,6 +500,15 @@ function ScanIcon() {
       <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
       <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
       <rect x="7" y="7" width="10" height="10" rx="1" />
+    </svg>
+  );
+}
+
+function ActionsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="qr-scanner__icon" aria-hidden="true">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a2 2 0 0 0 .4-1 2 2 0 0 0-.4-1l1.8-1.4a1 1 0 0 0 .2-1.4l-1.7-3a1 1 0 0 0-1.3-.4l-2.1.8a7.1 7.1 0 0 0-1.7-1l-.3-2.2A1 1 0 0 0 13 2h-2a1 1 0 0 0-1 .8l-.3 2.2a7.1 7.1 0 0 0-1.7 1l-2.1-.8a1 1 0 0 0-1.3.4l-1.7 3a1 1 0 0 0 .2 1.4L4.6 13a2 2 0 0 0-.4 1 2 2 0 0 0 .4 1l-1.8 1.4a1 1 0 0 0-.2 1.4l1.7 3a1 1 0 0 0 1.3.4l2.1-.8a7.1 7.1 0 0 0 1.7 1l.3 2.2a1 1 0 0 0 1 .8h2a1 1 0 0 0 1-.8l.3-2.2a7.1 7.1 0 0 0 1.7-1l2.1.8a1 1 0 0 0 1.3-.4l1.7-3a1 1 0 0 0-.2-1.4z" />
     </svg>
   );
 }

@@ -7,6 +7,7 @@ import { QRScanner } from './components/QRScanner';
 import type { QRScannerRef } from './components/QRScanner';
 import { SettingsModal } from './components/SettingsModal';
 import { HistoryModal } from './components/HistoryModal';
+import { ScanResultOverlay } from './components/ScanResultOverlay';
 import { MainLayout, HeaderNavigation } from './components/layout';
 import type { QRScanResult } from './types/scanner';
 import './App.css';
@@ -36,6 +37,8 @@ function App() {
   // Track modal visibility
   const [showSettings, setShowSettings] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showActionsOverlay, setShowActionsOverlay] = useState(false);
+  const [actionsResult, setActionsResult] = useState<QRScanResult | null>(null);
 
   // Ref to access QRScanner methods
   const scannerRef = useRef<QRScannerRef>(null);
@@ -101,6 +104,24 @@ function App() {
     setShowHistory(false);
   }, []);
 
+  const handleShowActions = useCallback((result: QRScanResult) => {
+    setActionsResult(result);
+    setShowActionsOverlay(true);
+  }, []);
+
+  const handleDismissActions = useCallback(() => {
+    setShowActionsOverlay(false);
+    setActionsResult(null);
+  }, []);
+
+  const handleNewScanFromActions = useCallback(() => {
+    setShowActionsOverlay(false);
+    setActionsResult(null);
+    setShowHistory(false);
+    scannerRef.current?.clearResult();
+    void scannerRef.current?.startScanner();
+  }, []);
+
   // Header right action with HeaderNavigation component
   const headerRightAction = (
     <HeaderNavigation
@@ -131,6 +152,7 @@ function App() {
             ref={scannerRef}
             onScan={handleScan}
             onError={handleScannerError}
+            onShowActions={handleShowActions}
             config={{
               facingMode: facingMode,
               deviceId: selectedDevice?.deviceId,
@@ -161,7 +183,17 @@ function App() {
       <HistoryModal
         visible={showHistory}
         onClose={handleCloseHistory}
+        onShowActions={handleShowActions}
       />
+
+      {actionsResult && (
+        <ScanResultOverlay
+          result={actionsResult}
+          visible={showActionsOverlay}
+          onNewScan={handleNewScanFromActions}
+          onDismiss={handleDismissActions}
+        />
+      )}
     </MainLayout>
   );
 }

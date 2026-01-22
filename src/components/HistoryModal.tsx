@@ -11,13 +11,15 @@ interface HistoryModalProps {
   visible: boolean;
   /** Callback when modal is closed */
   onClose: () => void;
+  /** Callback when user wants to see actions for a history item */
+  onShowActions?: (entry: ScanHistoryEntry) => void;
 }
 
 /**
  * Modal component that displays scan history with individual copy buttons
  * and clear all functionality.
  */
-export function HistoryModal({ visible, onClose }: HistoryModalProps) {
+export function HistoryModal({ visible, onClose, onShowActions }: HistoryModalProps) {
   const { entries, clearHistory, removeScan } = useScanHistory();
   const { success, error, warning } = useToast();
   const [copyingId, setCopyingId] = useState<string | null>(null);
@@ -180,6 +182,16 @@ export function HistoryModal({ visible, onClose }: HistoryModalProps) {
                     </div>
                   </div>
                   <div className="history-modal__item-actions">
+                    {onShowActions && (
+                      <button
+                        className="history-modal__item-button"
+                        onClick={() => onShowActions(entry)}
+                        aria-label="Show actions"
+                        data-testid="history-item-actions"
+                      >
+                        <ActionsIcon />
+                      </button>
+                    )}
                     <button
                       className={`history-modal__item-button history-modal__item-button--copy ${
                         copyingId === entry.id ? 'history-modal__item-button--copied' : ''
@@ -245,6 +257,22 @@ export function HistoryModal({ visible, onClose }: HistoryModalProps) {
         )}
       </div>
     </div>
+  );
+}
+
+function ActionsIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="history-modal__svg-icon"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a2 2 0 0 0 .4-1 2 2 0 0 0-.4-1l1.8-1.4a1 1 0 0 0 .2-1.4l-1.7-3a1 1 0 0 0-1.3-.4l-2.1.8a7.1 7.1 0 0 0-1.7-1l-.3-2.2A1 1 0 0 0 13 2h-2a1 1 0 0 0-1 .8l-.3 2.2a7.1 7.1 0 0 0-1.7 1l-2.1-.8a1 1 0 0 0-1.3.4l-1.7 3a1 1 0 0 0 .2 1.4L4.6 13a2 2 0 0 0-.4 1 2 2 0 0 0 .4 1l-1.8 1.4a1 1 0 0 0-.2 1.4l1.7 3a1 1 0 0 0 1.3.4l2.1-.8a7.1 7.1 0 0 0 1.7 1l.3 2.2a1 1 0 0 0 1 .8h2a1 1 0 0 0 1-.8l.3-2.2a7.1 7.1 0 0 0 1.7-1l2.1.8a1 1 0 0 0 1.3-.4l1.7-3a1 1 0 0 0-.2-1.4z" />
+    </svg>
   );
 }
 
