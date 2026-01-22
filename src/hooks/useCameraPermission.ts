@@ -165,10 +165,24 @@ export function useCameraPermission(): UseCameraPermissionReturn {
     // Set up permission change listener
     const cleanup = onPermissionChange((state) => {
       if (isMountedRef.current) {
-        setStatus((prev) => prev ? { ...prev, state } : {
-          state,
-          isSupported: true,
-          isSecureContext: true,
+        // Clear errors when permission is granted
+        if (state === 'granted') {
+          setError(null);
+        }
+
+        setStatus((prev) => {
+          const newStatus = prev ? { ...prev, state } : {
+            state,
+            isSupported: true,
+            isSecureContext: true,
+          };
+
+          // Remove error from status when granted
+          if (state === 'granted' && newStatus.error) {
+            delete newStatus.error;
+          }
+
+          return newStatus;
         });
       }
     });

@@ -4,7 +4,7 @@ import type { QRScanResult, QRScannerConfig } from '../types/scanner';
 import type { ScanError, RecoveryAction } from '../types/errors';
 import { mapScannerErrorToAppError } from '../utils/errorFactory';
 import { copyToClipboard } from '../utils/clipboard';
-import { detectPhoneNumber, type UriDetectionResult } from '../utils/uriDetector';
+import { detectPhoneNumber, detectSmsUri, type UriDetectionResult, type SmsUriDetectionResult } from '../utils/uriDetector';
 import { useToast } from '../contexts/ToastContext';
 import './QRScanner.css';
 
@@ -58,6 +58,8 @@ export const QRScanner = forwardRef<QRScannerRef, QRScannerProps>(function QRSca
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
   // Call state for phone number action
   const [callState, setCallState] = useState<'idle' | 'confirming' | 'initiated'>('idle');
+  // SMS state for compose SMS action
+  const [smsState, setSmsState] = useState<'idle' | 'confirming' | 'initiated'>('idle');
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { success, error: toastError } = useToast();
 
@@ -196,6 +198,11 @@ export const QRScanner = forwardRef<QRScannerRef, QRScannerProps>(function QRSca
     ? detectPhoneNumber(lastResult.text)
     : null;
 
+  // Detect SMS URI in result
+  const smsDetection: SmsUriDetectionResult | null = lastResult
+    ? detectSmsUri(lastResult.text)
+    : null;
+
   // Handle call action for phone numbers
   const handleCall = useCallback(() => {
     if (!phoneDetection?.isDetected || !phoneDetection.actionUri) return;
@@ -223,6 +230,37 @@ export const QRScanner = forwardRef<QRScannerRef, QRScannerProps>(function QRSca
       }, 2000);
     }
   }, [phoneDetection, callState, success]);
+
+  // Handle compose SMS action
+  const handleComposeSms = useCallback(() => {
+    if (!smsDetection?.isDetected || !smsDetection.actionUri) return;
+
+    if (smsState === 'idle') {
+      // First click: show confirmation
+      setSmsState('confirming');
+      const confirmMsg = smsDetection.messageBody
+        ? `Tap again to compose SMS to ${smsDetection.phoneNumber}`
+        : `Tap again to compose SMS to ${smsDetection.phoneNumber}`;
+      success(confirmMsg);
+
+      // Reset confirmation state after 3 seconds if not confirmed
+      setTimeout(() => {
+        setSmsState((current) => (current === 'confirming' ? 'idle' : current));
+      }, 3000);
+    } else if (smsState === 'confirming') {
+      // Second click: open SMS app
+      setSmsState('initiated');
+      success(`Opening SMS app for ${smsDetection.phoneNumber}...`);
+
+      // Open the sms: URI to trigger the SMS app
+      window.location.href = smsDetection.actionUri;
+
+      // Reset state after a delay
+      setTimeout(() => {
+        setSmsState('idle');
+      }, 2000);
+    }
+  }, [smsDetection, smsState, success]);
 
   // Format timestamp for display
   const formatTimestamp = (timestamp: number) => {
@@ -411,6 +449,22 @@ export const QRScanner = forwardRef<QRScannerRef, QRScannerProps>(function QRSca
                   {callState === 'initiated' ? <PhoneCheckIcon /> : <PhoneIcon />}
                 </button>
               )}
+              {smsDetection?.isDetected && (
+                <button
+                  className={`qr-scanner__result-item-button qr-scanner__result-item-button--sms ${
+                    smsState === 'confirming' ? 'qr-scanner__result-item-button--confirming' : ''
+                  } ${smsState === 'initiated' ? 'qr-scanner__result-item-button--initiated' : ''}`}
+                  onClick={handleComposeSms}
+                  aria-label={
+                    smsState === 'confirming'
+                      ? `Confirm compose SMS to ${smsDetection.phoneNumber}`
+                      : `Compose SMS to ${smsDetection.phoneNumber}`
+                  }
+                  data-testid="scan-result-sms"
+                >
+                  {smsState === 'initiated' ? <SmsCheckIcon /> : <SmsIcon />}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -512,6 +566,24 @@ function PhoneIcon() {
 }
 
 function PhoneCheckIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="qr-scanner__icon" aria-hidden="true">
+      <polyline points="20,6 9,17 4,12" />
+    </svg>
+  );
+}
+
+function SmsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="qr-scanner__icon" aria-hidden="true">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      <line x1="8" y1="9" x2="16" y2="9" />
+      <line x1="8" y1="13" x2="14" y2="13" />
+    </svg>
+  );
+}
+
+function SmsCheckIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="qr-scanner__icon" aria-hidden="true">
       <polyline points="20,6 9,17 4,12" />

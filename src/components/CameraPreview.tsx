@@ -159,11 +159,12 @@ export function CameraPreview({
       updateStatus('active');
       onStreamReady?.(stream);
     } catch (err) {
+      stopStream(); // Clean up any opened media stream tracks
       const errorMessage = err instanceof Error ? err.message : 'Failed to access camera';
       onError?.(errorMessage);
       updateStatus('error');
     }
-  }, [config, onError, onStreamReady, updateStatus]);
+  }, [config, onError, onStreamReady, updateStatus, stopStream]);
 
   /**
    * Handle video element loaded metadata

@@ -1,8 +1,12 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Button } from './ui/button';
 import type { QRScanResult } from '../types/scanner';
+import type { SearchActionState } from '../types/actions';
 import { copyToClipboard } from '../utils/clipboard';
 import { useToast } from '../contexts/ToastContext';
+import { detectWifiQr, getEncryptionDisplayName, type WifiDetectionResult } from '../utils/wifiParser';
+import { detectGeoUri, formatCoordinatesForDisplay, type GeoUriDetectionResult } from '../utils/geoDetector';
+import { detectContentType, generateSearchUrl } from '../utils/contentDetector';
 import './ScanResultOverlay.css';
 
 interface ScanResultOverlayProps {
@@ -27,8 +31,39 @@ export function ScanResultOverlay({
   onDismiss,
 }: ScanResultOverlayProps) {
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
+  const [ssidCopyState, setSsidCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
+  const [passwordCopyState, setPasswordCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
+  const [showPassword, setShowPassword] = useState(false);
+  const [searchState, setSearchState] = useState<SearchActionState>('idle');
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { success, error } = useToast();
+  const ssidCopyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const passwordCopyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { success, error, info } = useToast();
+
+  // Detect if this is a WiFi QR code
+  const wifiDetection: WifiDetectionResult = useMemo(
+    () => detectWifiQr(result.text),
+    [result.text]
+  );
+
+  // Detect if this is a geo: URI
+  const geoDetection: GeoUriDetectionResult = useMemo(
+    () => detectGeoUri(result.text),
+    [result.text]
+  );
+
+  // Detect content type for fallback actions
+  const contentDetection = useMemo(
+    () => detectContentType(result.text),
+    [result.text]
+  );
+
+  // Generate search URL for plain text content
+  const searchUrl = useMemo(
+    () => contentDetection.shouldOfferWebSearch ? generateSearchUrl(result.text) : '',
+    [result.text, contentDetection.shouldOfferWebSearch]
+  );
 
   // Handle escape key to dismiss overlay
   useEffect(() => {
@@ -44,14 +79,31 @@ export function ScanResultOverlay({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [visible, onDismiss]);
 
-  // Cleanup copy timeout on unmount
+  // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
       if (copyTimeoutRef.current) {
         clearTimeout(copyTimeoutRef.current);
       }
+      if (ssidCopyTimeoutRef.current) {
+        clearTimeout(ssidCopyTimeoutRef.current);
+      }
+      if (passwordCopyTimeoutRef.current) {
+        clearTimeout(passwordCopyTimeoutRef.current);
+      }
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
     };
   }, []);
+
+  // Reset states when result changes
+  useEffect(() => {
+    setSsidCopyState('idle');
+    setPasswordCopyState('idle');
+    setShowPassword(false);
+    setSearchState('idle');
+  }, [result.text]);
 
   const handleCopy = useCallback(async () => {
     const copySuccess = await copyToClipboard(result.text);
@@ -75,8 +127,108 @@ export function ScanResultOverlay({
     }, 2000);
   }, [result.text, success, error]);
 
+  // Handle copy SSID to clipboard
+  const handleCopySsid = useCallback(async () => {
+    if (!wifiDetection.data?.ssid) return;
+
+    const copySuccess = await copyToClipboard(wifiDetection.data.ssid);
+    setSsidCopyState(copySuccess ? 'copied' : 'error');
+
+    if (copySuccess) {
+      success('SSID copied to clipboard!');
+    } else {
+      error('Failed to copy SSID. Please try again.');
+    }
+
+    if (ssidCopyTimeoutRef.current) {
+      clearTimeout(ssidCopyTimeoutRef.current);
+    }
+
+    ssidCopyTimeoutRef.current = setTimeout(() => {
+      setSsidCopyState('idle');
+    }, 2000);
+  }, [wifiDetection.data?.ssid, success, error]);
+
+  // Handle copy password to clipboard
+  const handleCopyPassword = useCallback(async () => {
+    if (!wifiDetection.data?.password) return;
+
+    const copySuccess = await copyToClipboard(wifiDetection.data.password);
+    setPasswordCopyState(copySuccess ? 'copied' : 'error');
+
+    if (copySuccess) {
+      success('Password copied to clipboard!');
+    } else {
+      error('Failed to copy password. Please try again.');
+    }
+
+    if (passwordCopyTimeoutRef.current) {
+      clearTimeout(passwordCopyTimeoutRef.current);
+    }
+
+    passwordCopyTimeoutRef.current = setTimeout(() => {
+      setPasswordCopyState('idle');
+    }, 2000);
+  }, [wifiDetection.data?.password, success, error]);
+
+  // Toggle password visibility
+  const handleTogglePassword = useCallback(() => {
+    setShowPassword((prev) => !prev);
+  }, []);
+
+  // Handle opening location in maps
+  const handleOpenInMaps = useCallback(() => {
+    if (!geoDetection.data?.mapsUrl) return;
+
+    // Open in new tab - user already confirmed by clicking the button
+    window.open(geoDetection.data.mapsUrl, '_blank', 'noopener,noreferrer');
+    success('Opening location in maps...');
+  }, [geoDetection.data?.mapsUrl, success]);
+
+  // Handle "Search the web" action with confirmation
+  const handleSearchWeb = useCallback(() => {
+    if (!searchUrl) return;
+
+    if (searchState === 'idle') {
+      // First click - show confirmation
+      setSearchState('confirming');
+      info('Click again to search the web');
+
+      // Clear any existing timeout
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+
+      // Reset to idle after 3 seconds if user doesn't confirm
+      searchTimeoutRef.current = setTimeout(() => {
+        setSearchState('idle');
+      }, 3000);
+    } else if (searchState === 'confirming') {
+      // Second click - execute search
+      setSearchState('searching');
+
+      // Clear confirmation timeout
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+
+      // Open search in new tab
+      window.open(searchUrl, '_blank', 'noopener,noreferrer');
+      success('Opening web search...');
+
+      // Reset state after a short delay
+      searchTimeoutRef.current = setTimeout(() => {
+        setSearchState('idle');
+      }, 2000);
+    }
+  }, [searchUrl, searchState, info, success]);
+
   const handleNewScan = useCallback(() => {
     setCopyState('idle');
+    setSsidCopyState('idle');
+    setPasswordCopyState('idle');
+    setShowPassword(false);
+    setSearchState('idle');
     onNewScan();
   }, [onNewScan]);
 
@@ -121,51 +273,246 @@ export function ScanResultOverlay({
 
         {/* Content */}
         <div className="scan-result-overlay__content">
-          <label className="scan-result-overlay__label">Scanned Content:</label>
-          <div className="scan-result-overlay__text-container">
-            <pre className="scan-result-overlay__text" data-testid="scan-result-text">
-              {result.text}
-            </pre>
-          </div>
+          {wifiDetection.isWifi && wifiDetection.data ? (
+            // WiFi QR Code detected - show structured WiFi info
+            <>
+              <div className="scan-result-overlay__wifi-badge" data-testid="wifi-badge">
+                <WifiIcon />
+                <span>WiFi Network</span>
+              </div>
 
-          {/* Metadata */}
-          <div className="scan-result-overlay__meta">
-            <span className="scan-result-overlay__meta-item">
-              <strong>Format:</strong> {result.format}
-            </span>
-            <span className="scan-result-overlay__meta-item">
-              <strong>Time:</strong> {new Date(result.timestamp).toLocaleTimeString()}
-            </span>
-          </div>
+              {/* SSID Field */}
+              <div className="scan-result-overlay__wifi-field" data-testid="wifi-ssid-field">
+                <div className="scan-result-overlay__wifi-field-header">
+                  <label className="scan-result-overlay__label">Network Name (SSID)</label>
+                  <button
+                    className={`scan-result-overlay__wifi-copy-btn ${
+                      ssidCopyState === 'copied' ? 'scan-result-overlay__wifi-copy-btn--copied' : ''
+                    }`}
+                    onClick={handleCopySsid}
+                    aria-label={ssidCopyState === 'copied' ? 'SSID Copied!' : 'Copy SSID'}
+                    data-testid="copy-ssid-button"
+                  >
+                    {ssidCopyState === 'copied' ? <CheckIcon /> : <CopyIcon />}
+                    <span>{ssidCopyState === 'copied' ? 'Copied!' : 'Copy'}</span>
+                  </button>
+                </div>
+                <div className="scan-result-overlay__wifi-value" data-testid="wifi-ssid-value">
+                  {wifiDetection.data.ssid}
+                </div>
+              </div>
+
+              {/* Password Field (only if network has password) */}
+              {wifiDetection.data.encryptionType !== 'nopass' && wifiDetection.data.password && (
+                <div className="scan-result-overlay__wifi-field" data-testid="wifi-password-field">
+                  <div className="scan-result-overlay__wifi-field-header">
+                    <label className="scan-result-overlay__label">Password</label>
+                    <div className="scan-result-overlay__wifi-field-actions">
+                      <button
+                        className="scan-result-overlay__wifi-toggle-btn"
+                        onClick={handleTogglePassword}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        data-testid="toggle-password-button"
+                      >
+                        {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                      </button>
+                      <button
+                        className={`scan-result-overlay__wifi-copy-btn ${
+                          passwordCopyState === 'copied' ? 'scan-result-overlay__wifi-copy-btn--copied' : ''
+                        }`}
+                        onClick={handleCopyPassword}
+                        aria-label={passwordCopyState === 'copied' ? 'Password Copied!' : 'Copy Password'}
+                        data-testid="copy-password-button"
+                      >
+                        {passwordCopyState === 'copied' ? <CheckIcon /> : <CopyIcon />}
+                        <span>{passwordCopyState === 'copied' ? 'Copied!' : 'Copy'}</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div
+                    className="scan-result-overlay__wifi-value scan-result-overlay__wifi-value--password"
+                    data-testid="wifi-password-value"
+                  >
+                    {showPassword ? wifiDetection.data.password : '••••••••'}
+                  </div>
+                </div>
+              )}
+
+              {/* Open network notice */}
+              {wifiDetection.data.encryptionType === 'nopass' && (
+                <div className="scan-result-overlay__wifi-notice" data-testid="wifi-open-notice">
+                  <InfoIcon />
+                  <span>This is an open network (no password required)</span>
+                </div>
+              )}
+
+              {/* Network Info */}
+              <div className="scan-result-overlay__meta">
+                <span className="scan-result-overlay__meta-item">
+                  <strong>Security:</strong> {getEncryptionDisplayName(wifiDetection.data.encryptionType)}
+                </span>
+                {wifiDetection.data.hidden && (
+                  <span className="scan-result-overlay__meta-item">
+                    <strong>Hidden:</strong> Yes
+                  </span>
+                )}
+                <span className="scan-result-overlay__meta-item">
+                  <strong>Time:</strong> {new Date(result.timestamp).toLocaleTimeString()}
+                </span>
+              </div>
+            </>
+          ) : geoDetection.isGeo && geoDetection.data ? (
+            // Geo URI detected - show location info
+            <>
+              <div className="scan-result-overlay__wifi-badge" data-testid="geo-badge">
+                <MapPinIcon />
+                <span>Location</span>
+              </div>
+
+              {/* Coordinates Field */}
+              <div className="scan-result-overlay__wifi-field" data-testid="geo-coordinates-field">
+                <div className="scan-result-overlay__wifi-field-header">
+                  <label className="scan-result-overlay__label">Coordinates</label>
+                </div>
+                <div className="scan-result-overlay__wifi-value" data-testid="geo-coordinates-value">
+                  {formatCoordinatesForDisplay(geoDetection.data.latitude, geoDetection.data.longitude)}
+                </div>
+              </div>
+
+              {/* Altitude (if present) */}
+              {geoDetection.data.altitude !== undefined && (
+                <div className="scan-result-overlay__wifi-field" data-testid="geo-altitude-field">
+                  <div className="scan-result-overlay__wifi-field-header">
+                    <label className="scan-result-overlay__label">Altitude</label>
+                  </div>
+                  <div className="scan-result-overlay__wifi-value" data-testid="geo-altitude-value">
+                    {geoDetection.data.altitude} meters
+                  </div>
+                </div>
+              )}
+
+              {/* Uncertainty (if present) */}
+              {geoDetection.data.uncertainty !== undefined && (
+                <div className="scan-result-overlay__wifi-notice" data-testid="geo-uncertainty-notice">
+                  <InfoIcon />
+                  <span>Uncertainty: ±{geoDetection.data.uncertainty} meters</span>
+                </div>
+              )}
+
+              {/* Metadata */}
+              <div className="scan-result-overlay__meta">
+                <span className="scan-result-overlay__meta-item">
+                  <strong>Format:</strong> {result.format}
+                </span>
+                <span className="scan-result-overlay__meta-item">
+                  <strong>Time:</strong> {new Date(result.timestamp).toLocaleTimeString()}
+                </span>
+              </div>
+            </>
+          ) : (
+            // Regular QR Code - show raw content
+            <>
+              <label className="scan-result-overlay__label">Scanned Content:</label>
+              <div className="scan-result-overlay__text-container">
+                <pre className="scan-result-overlay__text" data-testid="scan-result-text">
+                  {result.text}
+                </pre>
+              </div>
+
+              {/* Metadata */}
+              <div className="scan-result-overlay__meta">
+                <span className="scan-result-overlay__meta-item">
+                  <strong>Format:</strong> {result.format}
+                </span>
+                <span className="scan-result-overlay__meta-item">
+                  <strong>Time:</strong> {new Date(result.timestamp).toLocaleTimeString()}
+                </span>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Actions */}
         <div className="scan-result-overlay__actions">
-          <Button
-            variant="outline"
-            onClick={handleCopy}
-            className="scan-result-overlay__button"
-            data-testid="copy-to-clipboard-button"
-          >
-            {copyState === 'idle' && (
-              <>
-                <CopyIcon />
-                Copy to Clipboard
-              </>
-            )}
-            {copyState === 'copied' && (
-              <>
-                <CheckIcon />
-                Copied!
-              </>
-            )}
-            {copyState === 'error' && (
-              <>
-                <ErrorIcon />
-                Copy Failed
-              </>
-            )}
-          </Button>
+          {/* Show Open in Maps button for geo URIs */}
+          {geoDetection.isGeo && geoDetection.data && (
+            <Button
+              variant="outline"
+              onClick={handleOpenInMaps}
+              className="scan-result-overlay__button"
+              data-testid="open-in-maps-button"
+            >
+              <MapPinIcon />
+              Open in Maps
+            </Button>
+          )}
+
+          {/* Show raw copy button only for non-WiFi and non-geo codes */}
+          {!wifiDetection.isWifi && !geoDetection.isGeo && (
+            <Button
+              variant="outline"
+              onClick={handleCopy}
+              className="scan-result-overlay__button"
+              data-testid="copy-to-clipboard-button"
+            >
+              {copyState === 'idle' && (
+                <>
+                  <CopyIcon />
+                  Copy to Clipboard
+                </>
+              )}
+              {copyState === 'copied' && (
+                <>
+                  <CheckIcon />
+                  Copied!
+                </>
+              )}
+              {copyState === 'error' && (
+                <>
+                  <ErrorIcon />
+                  Copy Failed
+                </>
+              )}
+            </Button>
+          )}
+
+          {/* Show Search the Web button for plain text (fallback action) */}
+          {contentDetection.shouldOfferWebSearch && (
+            <Button
+              variant="outline"
+              onClick={handleSearchWeb}
+              className={`scan-result-overlay__button scan-result-overlay__button--search ${
+                searchState === 'confirming' ? 'scan-result-overlay__button--confirming' : ''
+              } ${searchState === 'searching' ? 'scan-result-overlay__button--searching' : ''}`}
+              data-testid="search-web-button"
+              aria-label={
+                searchState === 'idle'
+                  ? 'Search the web'
+                  : searchState === 'confirming'
+                  ? 'Click again to confirm search'
+                  : 'Opening search...'
+              }
+            >
+              {searchState === 'idle' && (
+                <>
+                  <SearchIcon />
+                  Search the Web
+                </>
+              )}
+              {searchState === 'confirming' && (
+                <>
+                  <SearchIcon />
+                  Click to Confirm
+                </>
+              )}
+              {searchState === 'searching' && (
+                <>
+                  <CheckIcon />
+                  Opening...
+                </>
+              )}
+            </Button>
+          )}
 
           <Button
             variant="default"
@@ -278,6 +625,105 @@ function ScanIcon() {
       <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
       <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
       <rect x="7" y="7" width="10" height="10" rx="1" />
+    </svg>
+  );
+}
+
+function WifiIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="scan-result-overlay__svg-icon scan-result-overlay__svg-icon--wifi"
+      aria-hidden="true"
+    >
+      <path d="M5 12.55a11 11 0 0 1 14.08 0" />
+      <path d="M1.42 9a16 16 0 0 1 21.16 0" />
+      <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+      <line x1="12" y1="20" x2="12.01" y2="20" />
+    </svg>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="scan-result-overlay__svg-icon"
+      aria-hidden="true"
+    >
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function EyeOffIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="scan-result-overlay__svg-icon"
+      aria-hidden="true"
+    >
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+      <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
+  );
+}
+
+function InfoIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="scan-result-overlay__svg-icon"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" y1="16" x2="12" y2="12" />
+      <line x1="12" y1="8" x2="12.01" y2="8" />
+    </svg>
+  );
+}
+
+function MapPinIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="scan-result-overlay__svg-icon scan-result-overlay__svg-icon--map"
+      aria-hidden="true"
+    >
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="scan-result-overlay__svg-icon scan-result-overlay__svg-icon--search"
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
     </svg>
   );
 }
