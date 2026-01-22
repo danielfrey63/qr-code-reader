@@ -1,11 +1,12 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Button } from './ui/button';
 import type { QRScanResult } from '../types/scanner';
-import type { SearchActionState } from '../types/actions';
+import type { SearchActionState, PaymentActionState } from '../types/actions';
 import { copyToClipboard } from '../utils/clipboard';
 import { useToast } from '../contexts/ToastContext';
 import { detectWifiQr, getEncryptionDisplayName, type WifiDetectionResult } from '../utils/wifiParser';
 import { detectGeoUri, formatCoordinatesForDisplay, type GeoUriDetectionResult } from '../utils/geoDetector';
+import { detectPaymentUri, formatPaymentAddressForDisplay, formatPaymentAmountForDisplay, type PaymentUriDetectionResult } from '../utils/paymentDetector';
 import { detectContentType, generateSearchUrl } from '../utils/contentDetector';
 import './ScanResultOverlay.css';
 
@@ -35,11 +36,13 @@ export function ScanResultOverlay({
   const [passwordCopyState, setPasswordCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
   const [showPassword, setShowPassword] = useState(false);
   const [searchState, setSearchState] = useState<SearchActionState>('idle');
+  const [paymentState, setPaymentState] = useState<PaymentActionState>('idle');
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ssidCopyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const passwordCopyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { success, error, info } = useToast();
+  const paymentTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { success, error, info, warning } = useToast();
 
   // Detect if this is a WiFi QR code
   const wifiDetection: WifiDetectionResult = useMemo(
@@ -50,6 +53,12 @@ export function ScanResultOverlay({
   // Detect if this is a geo: URI
   const geoDetection: GeoUriDetectionResult = useMemo(
     () => detectGeoUri(result.text),
+    [result.text]
+  );
+
+  // Detect if this is a payment URI
+  const paymentDetection: PaymentUriDetectionResult = useMemo(
+    () => detectPaymentUri(result.text),
     [result.text]
   );
 
@@ -94,6 +103,9 @@ export function ScanResultOverlay({
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
       }
+      if (paymentTimeoutRef.current) {
+        clearTimeout(paymentTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -103,6 +115,7 @@ export function ScanResultOverlay({
     setPasswordCopyState('idle');
     setShowPassword(false);
     setSearchState('idle');
+    setPaymentState('idle');
   }, [result.text]);
 
   const handleCopy = useCallback(async () => {
@@ -223,12 +236,56 @@ export function ScanResultOverlay({
     }
   }, [searchUrl, searchState, info, success]);
 
+  // Handle "Open payment app" action with warning + confirmation
+  const handleOpenPayment = useCallback(() => {
+    if (!paymentDetection.data?.uri) return;
+
+    if (paymentState === 'idle') {
+      // First click - show warning and confirmation
+      setPaymentState('confirming');
+      warning(paymentDetection.data.warningMessage || 'Click again to open payment app');
+
+      // Clear any existing timeout
+      if (paymentTimeoutRef.current) {
+        clearTimeout(paymentTimeoutRef.current);
+      }
+
+      // Reset to idle after 5 seconds if user doesn't confirm (longer timeout for payments)
+      paymentTimeoutRef.current = setTimeout(() => {
+        setPaymentState('idle');
+      }, 5000);
+    } else if (paymentState === 'confirming') {
+      // Second click - execute payment action
+      setPaymentState('opening');
+
+      // Clear confirmation timeout
+      if (paymentTimeoutRef.current) {
+        clearTimeout(paymentTimeoutRef.current);
+      }
+
+      // Open the payment URI - this will trigger the system to handle it
+      // For crypto payments, this typically opens a wallet app
+      try {
+        window.location.href = paymentDetection.data.uri;
+        success('Opening payment app...');
+      } catch {
+        error('Failed to open payment app. Please copy the address manually.');
+      }
+
+      // Reset state after a short delay
+      paymentTimeoutRef.current = setTimeout(() => {
+        setPaymentState('idle');
+      }, 2000);
+    }
+  }, [paymentDetection.data, paymentState, warning, success, error]);
+
   const handleNewScan = useCallback(() => {
     setCopyState('idle');
     setSsidCopyState('idle');
     setPasswordCopyState('idle');
     setShowPassword(false);
     setSearchState('idle');
+    setPaymentState('idle');
     onNewScan();
   }, [onNewScan]);
 
@@ -409,6 +466,90 @@ export function ScanResultOverlay({
                 </span>
               </div>
             </>
+          ) : paymentDetection.isPayment && paymentDetection.data ? (
+            // Payment URI detected - show payment info with warning
+            <>
+              <div className="scan-result-overlay__payment-badge" data-testid="payment-badge">
+                <PaymentIcon />
+                <span>{paymentDetection.data.displayName}</span>
+              </div>
+
+              {/* Warning Notice */}
+              <div className="scan-result-overlay__payment-warning" data-testid="payment-warning">
+                <WarningIcon />
+                <span>Verify payment details carefully before proceeding. Transactions may be irreversible.</span>
+              </div>
+
+              {/* Payment Address Field */}
+              <div className="scan-result-overlay__wifi-field" data-testid="payment-address-field">
+                <div className="scan-result-overlay__wifi-field-header">
+                  <label className="scan-result-overlay__label">Payment Address</label>
+                  <button
+                    className={`scan-result-overlay__wifi-copy-btn ${
+                      copyState === 'copied' ? 'scan-result-overlay__wifi-copy-btn--copied' : ''
+                    }`}
+                    onClick={handleCopy}
+                    aria-label={copyState === 'copied' ? 'Address Copied!' : 'Copy Address'}
+                    data-testid="copy-payment-address-button"
+                  >
+                    {copyState === 'copied' ? <CheckIcon /> : <CopyIcon />}
+                    <span>{copyState === 'copied' ? 'Copied!' : 'Copy'}</span>
+                  </button>
+                </div>
+                <div className="scan-result-overlay__wifi-value scan-result-overlay__wifi-value--payment" data-testid="payment-address-value">
+                  {formatPaymentAddressForDisplay(paymentDetection.data.address, 40)}
+                </div>
+              </div>
+
+              {/* Amount Field (if present) */}
+              {paymentDetection.data.amount && (
+                <div className="scan-result-overlay__wifi-field" data-testid="payment-amount-field">
+                  <div className="scan-result-overlay__wifi-field-header">
+                    <label className="scan-result-overlay__label">Amount</label>
+                  </div>
+                  <div className="scan-result-overlay__wifi-value" data-testid="payment-amount-value">
+                    {formatPaymentAmountForDisplay(paymentDetection.data.amount, paymentDetection.data.scheme)}
+                  </div>
+                </div>
+              )}
+
+              {/* Label/Recipient (if present) */}
+              {paymentDetection.data.label && (
+                <div className="scan-result-overlay__wifi-field" data-testid="payment-label-field">
+                  <div className="scan-result-overlay__wifi-field-header">
+                    <label className="scan-result-overlay__label">Recipient</label>
+                  </div>
+                  <div className="scan-result-overlay__wifi-value" data-testid="payment-label-value">
+                    {paymentDetection.data.label}
+                  </div>
+                </div>
+              )}
+
+              {/* Message (if present) */}
+              {paymentDetection.data.message && (
+                <div className="scan-result-overlay__wifi-field" data-testid="payment-message-field">
+                  <div className="scan-result-overlay__wifi-field-header">
+                    <label className="scan-result-overlay__label">Message</label>
+                  </div>
+                  <div className="scan-result-overlay__wifi-value" data-testid="payment-message-value">
+                    {paymentDetection.data.message}
+                  </div>
+                </div>
+              )}
+
+              {/* Metadata */}
+              <div className="scan-result-overlay__meta">
+                <span className="scan-result-overlay__meta-item">
+                  <strong>Type:</strong> {paymentDetection.scheme?.toUpperCase()}
+                </span>
+                <span className="scan-result-overlay__meta-item">
+                  <strong>Format:</strong> {result.format}
+                </span>
+                <span className="scan-result-overlay__meta-item">
+                  <strong>Time:</strong> {new Date(result.timestamp).toLocaleTimeString()}
+                </span>
+              </div>
+            </>
           ) : (
             // Regular QR Code - show raw content
             <>
@@ -447,8 +588,46 @@ export function ScanResultOverlay({
             </Button>
           )}
 
-          {/* Show raw copy button only for non-WiFi and non-geo codes */}
-          {!wifiDetection.isWifi && !geoDetection.isGeo && (
+          {/* Show Open Payment App button for payment URIs */}
+          {paymentDetection.isPayment && paymentDetection.data && (
+            <Button
+              variant="outline"
+              onClick={handleOpenPayment}
+              className={`scan-result-overlay__button scan-result-overlay__button--payment ${
+                paymentState === 'confirming' ? 'scan-result-overlay__button--payment-confirming' : ''
+              } ${paymentState === 'opening' ? 'scan-result-overlay__button--payment-opening' : ''}`}
+              data-testid="open-payment-button"
+              aria-label={
+                paymentState === 'idle'
+                  ? 'Open payment app'
+                  : paymentState === 'confirming'
+                  ? 'Click again to confirm opening payment app'
+                  : 'Opening payment app...'
+              }
+            >
+              {paymentState === 'idle' && (
+                <>
+                  <PaymentIcon />
+                  Open Payment App
+                </>
+              )}
+              {paymentState === 'confirming' && (
+                <>
+                  <WarningIcon />
+                  Click to Confirm
+                </>
+              )}
+              {paymentState === 'opening' && (
+                <>
+                  <CheckIcon />
+                  Opening...
+                </>
+              )}
+            </Button>
+          )}
+
+          {/* Show raw copy button only for non-WiFi, non-geo, and non-payment codes */}
+          {!wifiDetection.isWifi && !geoDetection.isGeo && !paymentDetection.isPayment && (
             <Button
               variant="outline"
               onClick={handleCopy}
@@ -724,6 +903,39 @@ function SearchIcon() {
     >
       <circle cx="11" cy="11" r="8" />
       <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+  );
+}
+
+function PaymentIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="scan-result-overlay__svg-icon scan-result-overlay__svg-icon--payment"
+      aria-hidden="true"
+    >
+      <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+      <line x1="1" y1="10" x2="23" y2="10" />
+    </svg>
+  );
+}
+
+function WarningIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="scan-result-overlay__svg-icon scan-result-overlay__svg-icon--warning"
+      aria-hidden="true"
+    >
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
     </svg>
   );
 }

@@ -666,3 +666,180 @@
     color: #66bb6a !important;
   }
 }
+
+/* ==========================================================================
+   Payment URI Specific Styles
+   ========================================================================== */
+
+/**
+ * Payment Badge - identifies this as a payment QR code
+ */
+.scan-result-overlay__payment-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  background-color: var(--color-warning-100, #fff8e1);
+  color: var(--color-warning-800, #e65100);
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.scan-result-overlay__svg-icon--payment {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--color-warning-700, #f57c00);
+}
+
+/**
+ * Payment Warning - prominent warning notice for payment URIs
+ */
+.scan-result-overlay__payment-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background-color: var(--color-error-100, #ffebee);
+  border: 1px solid var(--color-error-300, #ef9a9a);
+  border-radius: var(--radius-md, 0.375rem);
+  font-size: 0.8125rem;
+  color: var(--color-error-800, #c62828);
+  margin-bottom: 0.75rem;
+}
+
+.scan-result-overlay__payment-warning .scan-result-overlay__svg-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.scan-result-overlay__svg-icon--warning {
+  color: var(--color-error-600, #e53935);
+}
+
+/**
+ * Payment value field - for addresses (monospace, allow word wrap)
+ */
+.scan-result-overlay__wifi-value--payment {
+  word-break: break-all;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+}
+
+/**
+ * Payment button base styles
+ */
+.scan-result-overlay__button--payment {
+  transition: all 0.2s ease;
+}
+
+/**
+ * Payment button - confirming state (waiting for second click)
+ */
+.scan-result-overlay__button--payment-confirming {
+  background-color: var(--color-error-100, #ffebee) !important;
+  border-color: var(--color-error-500, #f44336) !important;
+  color: var(--color-error-800, #c62828) !important;
+  animation: pulse-payment-warning 1.5s infinite;
+}
+
+.scan-result-overlay__button--payment-confirming .scan-result-overlay__svg-icon--warning {
+  color: var(--color-error-600, #e53935);
+}
+
+@keyframes pulse-payment-warning {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(244, 67, 54, 0.15);
+  }
+}
+
+/**
+ * Payment button - opening state
+ */
+.scan-result-overlay__button--payment-opening {
+  background-color: var(--color-success-100, #e8f5e9) !important;
+  border-color: var(--color-success-500, #4caf50) !important;
+  color: var(--color-success-700, #388e3c) !important;
+}
+
+/* ==========================================================================
+   Payment Dark Mode Support
+   ========================================================================== */
+
+.dark .scan-result-overlay__payment-badge {
+  background-color: rgba(255, 152, 0, 0.15);
+  color: var(--color-warning-400, #ffb74d);
+}
+
+.dark .scan-result-overlay__svg-icon--payment {
+  color: var(--color-warning-400, #ffb74d);
+}
+
+.dark .scan-result-overlay__payment-warning {
+  background-color: rgba(244, 67, 54, 0.1);
+  border-color: rgba(244, 67, 54, 0.3);
+  color: var(--color-error-400, #ef5350);
+}
+
+.dark .scan-result-overlay__svg-icon--warning {
+  color: var(--color-error-400, #ef5350);
+}
+
+.dark .scan-result-overlay__button--payment-confirming {
+  background-color: rgba(244, 67, 54, 0.15) !important;
+  border-color: var(--color-error-500, #f44336) !important;
+  color: var(--color-error-400, #ef5350) !important;
+}
+
+.dark .scan-result-overlay__button--payment-confirming .scan-result-overlay__svg-icon--warning {
+  color: var(--color-error-400, #ef5350);
+}
+
+.dark .scan-result-overlay__button--payment-opening {
+  background-color: rgba(76, 175, 80, 0.15) !important;
+  border-color: var(--color-success-500, #4caf50) !important;
+  color: var(--color-success-400, #66bb6a) !important;
+}
+
+/* Media query fallback for system dark mode */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) .scan-result-overlay__payment-badge {
+    background-color: rgba(255, 152, 0, 0.15);
+    color: #ffb74d;
+  }
+
+  :root:not(.light) .scan-result-overlay__svg-icon--payment {
+    color: #ffb74d;
+  }
+
+  :root:not(.light) .scan-result-overlay__payment-warning {
+    background-color: rgba(244, 67, 54, 0.1);
+    border-color: rgba(244, 67, 54, 0.3);
+    color: #ef5350;
+  }
+
+  :root:not(.light) .scan-result-overlay__svg-icon--warning {
+    color: #ef5350;
+  }
+
+  :root:not(.light) .scan-result-overlay__button--payment-confirming {
+    background-color: rgba(244, 67, 54, 0.15) !important;
+    border-color: #f44336 !important;
+    color: #ef5350 !important;
+  }
+
+  :root:not(.light) .scan-result-overlay__button--payment-confirming .scan-result-overlay__svg-icon--warning {
+    color: #ef5350;
+  }
+
+  :root:not(.light) .scan-result-overlay__button--payment-opening {
+    background-color: rgba(76, 175, 80, 0.15) !important;
+    border-color: #4caf50 !important;
+    color: #66bb6a !important;
+  }
+}

@@ -6,6 +6,7 @@
 import { detectWifiQr } from './wifiParser';
 import { detectGeoUri } from './geoDetector';
 import { detectPhoneNumber, detectSmsUri } from './uriDetector';
+import { detectPaymentUri } from './paymentDetector';
 
 
 /**
@@ -18,6 +19,7 @@ export type ContentType =
   | 'TEL'
   | 'SMS'
   | 'EMAIL'
+  | 'PAYMENT'
   | 'PLAIN_TEXT';
 
 /**
@@ -138,6 +140,17 @@ export function detectContentType(text: string): ContentDetectionResult {
     };
   }
 
+  // Check for Payment URI (bitcoin:, lightning:, upi:, etc.)
+  const paymentResult = detectPaymentUri(trimmedText);
+  if (paymentResult.isPayment) {
+    return {
+      type: 'PAYMENT',
+      isStructured: true,
+      rawText: trimmedText,
+      shouldOfferWebSearch: false,
+    };
+  }
+
   // Fallback: Plain text - offer web search
   return {
     type: 'PLAIN_TEXT',
@@ -178,6 +191,8 @@ export function getContentTypeDisplayName(type: ContentType): string {
       return 'SMS Message';
     case 'EMAIL':
       return 'Email Address';
+    case 'PAYMENT':
+      return 'Payment Request';
     case 'PLAIN_TEXT':
       return 'Plain Text';
     default:

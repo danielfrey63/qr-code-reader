@@ -13,7 +13,8 @@ export type ContentActionType =
   | 'CALL_PHONE'
   | 'SEND_SMS'
   | 'OPEN_MAPS'
-  | 'COPY_CLIPBOARD';
+  | 'COPY_CLIPBOARD'
+  | 'OPEN_PAYMENT';
 
 /**
  * A suggested action for scanned content
@@ -39,6 +40,11 @@ export interface ContentAction {
  * State for managing search action confirmation flow
  */
 export type SearchActionState = 'idle' | 'confirming' | 'searching';
+
+/**
+ * State for managing payment action confirmation flow
+ */
+export type PaymentActionState = 'idle' | 'confirming' | 'opening';
 
 /**
  * Creates a "Search the web" action for plain text content
