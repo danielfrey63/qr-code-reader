@@ -39,3 +39,7 @@ coverage/
 test-reports/
 playwright-report/
 test-results/
+
+# Claude Code: runtime artefacts (the config itself is tracked)
+.claude/hook-log.txt
+.claude/settings.local.json
